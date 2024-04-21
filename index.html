@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+	
+    <title>Phaser Template</title>
+
+    <style>
+      html,
+      body,
+      #game-container {
+        margin: 0;
+        padding: 0;
+      }
+
+      #game-container {
+        min-width: 100vw;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      #game-container > canvas {
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="game-container"></div>
+    <script src="//cdn.jsdelivr.net/npm/phaser@3.55.2/dist/phaser.js"></script>
+    
+	<script src="https://unpkg.com/peerjs@1.5.0/dist/peerjs.min.js"></script>
+  </body>
+    <script>
+	var otherplayer={id:0,x:0,y:0,side:0,movingx:0,movingy:0}
+       /* var recvId = document.getElementById("receiver-id");
+        var status = document.getElementById("status");
+        var messageInput = document.getElementById('messageInput');*/
+        var peer = null; // Own peer object
+        var lastPeerId = null;
+        var conn = null;
+        peer = new Peer(null, {
+            debug: 2
+        });
+		
+		
+		 var p = location.hash;
+        console.log(p.substring(1));
+		console.log(p)
+		
+		
+		
+		
+
+        peer.on('open', function (id) {
+            // Workaround for peer.reconnect deleting previous id
+            if (peer.id === null) {
+                console.log('Received null id from peer open');
+                peer.id = lastPeerId;
+            } else {
+                lastPeerId = peer.id;
+            }
+
+            console.log('ID: ' + peer.id);
+            //recvId.innerHTML = "ID: " + peer.id;
+            //status.innerHTML = "Awaiting connection...";
+        });
+
+        peer.on('connection', function (c) {
+            // Allow only a single connection
+            if (conn && conn.open) {
+                c.on('open', function () {
+                    c.send("Already connected to another client");
+                    setTimeout(function () { c.close(); }, 500);
+                });
+                return;
+            }
+
+            conn = c;
+            console.log("Connected to: " + conn.peer);
+            status.innerHTML = "Connected";
+            ready();
+        });
+
+        function ready() {
+            conn.on('data', function (data) {
+                console.log("Data received");
+                console.log(data);
+				var log=JSON.parse(data)
+										otherplayer={id:log.id,x:log.x,y:log.y,side:log.side,movingx:log.movingx,movingy:log.movingy}
+            });
+        }
+
+        function sendMessage(message) {
+           // var message = messageInput.value;
+
+            if (conn && conn.open) {
+                conn.send(message);
+                //messageInput.value = ''; // Clear the input field after sending the message
+            }
+        }
+		
+		
+		if(p!=''){
+		alert('hello')
+		
+								 function join() {
+									if (conn) {
+										// Remove the line that closes the connection immediately
+										// conn.close();
+									}
+
+									conn = peer.connect(p.substring(1), {
+										reliable: true
+									});
+
+									// on open will be launched when you successfully connect to PeerServer
+									conn.on('open', function () {
+										// Remove the line that closes the connection immediately
+										// conn.close();
+
+										console.log("Connected to: " + conn.peer);
+										// here you have conn.id
+										console.log('connected');
+									});
+									conn.on('data', function (data) {
+										console.log("Data received");
+										console.log(data);
+										var log=JSON.parse(data)
+										otherplayer={id:log.id,x:log.x,y:log.y,side:log.side,movingx:log.movingx,movingy:log.movingy}
+									});
+								}
+
+								// Use the open event itself to ensure that the connection is open before sending a message
+								peer.on('open', function () {
+									setTimeout(() => {
+										join();
+									}, 2000);
+								});
+		}
+		
+    </script>
+  <script src="./index.js" type="module"></script>
+  
+</html>
