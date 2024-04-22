@@ -15,10 +15,19 @@ export default class VampScene extends Phaser.Scene {
         this.load.image('background', 'assets/background.jpg');
         this.load.spritesheet('player', 'assets/hero.png', { frameWidth: 180, frameHeight: 198 });
 		 this.load.spritesheet('enemy', 'assets/enemy.png', { frameWidth: 32, frameHeight: 32 });
+		  this.load.image('hammer', 'assets/hammer.png'); 
         // Add more assets as needed
     }
 
     create() {
+		 this.hammer = this.physics.add.sprite(100, 100, 'hammer');
+this.hammer.displayHeight=32;
+  this.hammer.displayWidth=32;
+  this.hammer.setDepth(3);
+  // Orbit parameters
+  this.radius = 100;
+  this.speed = 0.05;
+  this.angle = 0;
 		
 		this.spaceBar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
    cursors = this.input.keyboard.createCursorKeys();
@@ -85,6 +94,8 @@ this.player2.displayWidth = 50;
 
         // Enable collision between player and enemies
         this.physics.add.collider(this.player, this.enemies, this.handleCollision, null, this);
+		
+		this.physics.add.collider(this.hammer, this.enemies, this.handleCollisionItem, null, this);
 
         // Set up player animations and controls here
     }
@@ -146,11 +157,28 @@ player.body.setVelocityX(0);
         player.anims.play('idle', true);		
 	}
 		
+	 this.angle += this.speed;
+  if (this.angle > 2 * Math.PI) {
+      this.angle -= 2 * Math.PI; // reset angle to prevent overflow
+  }
+  this.hammer.x = player.x + this.radius * Math.cos(this.angle);
+  this.hammer.y = player.y + this.radius * Math.sin(this.angle);
+		
 		
 		
     }
-
-    handleCollision(player, enemy) {
+		
+		
+     handleCollision(item, enemy) {
+		//console.log('hit')
         // Handle what happens when a player hits an enemy
     }
+	
+	 handleCollisionItem(item, enemy) {
+		console.log('item hit')
+		enemy.destroy()
+        // Handle what happens when a player hits an enemy
+    }
+
+    
 }

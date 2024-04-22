@@ -8,6 +8,7 @@
 
 import EmptyScene from './scenes/EmptyScene.js';
 import VampScene from './scenes/VampScene.js';
+import MenuScene from './scenes/MenuScene.js';
 
 
 
@@ -278,7 +279,7 @@ player.body.setVelocityX(0);
 const config = {
   type: Phaser.AUTO,
   width: 800,
-  height: 600,
+  height: 800,
   parent: "game-container",
   pixelArt: true,
   physics: {
@@ -288,7 +289,7 @@ const config = {
       gravity: { y: 0 },
     },
   },
- scene: [VampScene,EmptyScene,MainScene]
+ scene: [MenuScene,VampScene,EmptyScene,MainScene]
 };
 
 const game = new Phaser.Game(config);
