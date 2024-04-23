@@ -7,6 +7,9 @@ let cursors;
 export default class VampScene extends Phaser.Scene {
     constructor() {
         super({ key: 'VampScene' });
+		     this.playerMaxHealth = 100;
+        this.playerHealth = this.playerMaxHealth;
+		this.hitCooldown = false; // Flag to manage hit cooldown
     }
 
 
@@ -88,6 +91,16 @@ this.hammer.displayHeight=32;
         this.player = this.physics.add.sprite(400, 300, 'player');
 this.player.displayWidth = 50;
         this.player.displayHeight = 50;
+		
+		
+		  // Create a health bar
+        this.healthBar = this.add.graphics();
+        this.healthBar.fillStyle(0x00FF00, 1);
+        this.healthBar.fillRect(0, 0, this.sys.game.config.width, 24);
+		
+		
+		
+		
 		
 		
 		// Create player
@@ -214,10 +227,38 @@ player.body.setVelocityX(0);
     }
 		
 		
-     handleCollision(item, enemy) {
+     handleCollision(player, enemy) {
 		//console.log('hit')
         // Handle what happens when a player hits an enemy
+		    if (!this.hitCooldown) {
+            this.playerHealth -= 10; // Decrease health by 10 or whatever amount is suitable
+            this.updateHealthBar();
+
+            if (this.playerHealth <= 0) {
+                // Player is dead, trigger the end game sequence
+                this.endGame();
+            } else {
+                // Player was hit but is still alive, start hit cooldown
+                this.startHitCooldown();
+            }
+        }
     }
+	
+	   
+   startHitCooldown() {
+        this.hitCooldown = true; // Activate the cooldown
+        
+        // Optionally change the player's appearance to indicate they've been hit
+        this.player.setTint(0xff0000);
+
+        // Set a timed event for 1 second to reset the cooldown
+        this.time.delayedCall(1000, () => {
+            this.hitCooldown = false;
+            this.player.clearTint(); // Reset the tint to indicate the player can be hit again
+        });
+    }
+   
+
 	
 	 handleCollisionItem(item, enemy) {
 		console.log('item hit')
@@ -226,7 +267,13 @@ player.body.setVelocityX(0);
     }
 	
 	
-	
+	    updateHealthBar() {
+        // Scale the health bar according to the player's health
+        this.healthBar.scaleX = this.playerHealth / this.playerMaxHealth;
+        this.healthBar.clear();
+        this.healthBar.fillStyle(0x00FF00, 1);
+        this.healthBar.fillRect(0, 0, this.sys.game.config.width * this.healthBar.scaleX, 24);
+    }
 	
 	 onCountdown() {
         this.initialTime -= 1; // Decrease the timer by one
@@ -239,8 +286,10 @@ player.body.setVelocityX(0);
         // Check if all enemies are dead
         if (this.enemies.countActive(true) === 0) {
             this.resetGame(); // Reset the game if all enemies are dead
+		
         } else {
             this.endGame(); // End the game if any enemies are alive
+			
         }
     }
 	
@@ -259,13 +308,37 @@ player.body.setVelocityX(0);
 
     // Optionally, stop the player from moving or taking any actions
     // ... your code to stop the player ...
+    // Create a restart button
+    let restartButton = this.add.text(this.sys.game.config.width / 2, (this.sys.game.config.height / 2)+50, 'Restart', {
+        fontSize: '32px',
+        fill: '#FFFFFF'
+    }).setOrigin(0.5).setInteractive();
+
+    // When the restart button is clicked, restart the game
+    restartButton.on('pointerdown', () => {
+        //this.scene.restart();
+	
+		 this.resetGame();
+		
+    });
+
+    // Change the button color when hovered
+    restartButton.on('pointerover', () => restartButton.setStyle({ fill: '#FFCC00' }));
+    restartButton.on('pointerout', () => restartButton.setStyle({ fill: '#FFFFFF' }));
+
+    // Optionally, stop the player from moving or taking any actions
+    // ... your code to stop the player ...
 
     // You could also stop the scene or go to a game over scene
     // this.scene.stop();
     // this.scene.start('GameOverScene');
+
+	
+	
 }
 
     resetGame() {
+			this.hitCooldown = false;
         // Kill all enemies
         this.enemies.clear(true, true);
 
@@ -297,6 +370,7 @@ player.body.setVelocityX(0);
         callbackScope: this,
         loop: true
     });
+	
 	
     }
 
