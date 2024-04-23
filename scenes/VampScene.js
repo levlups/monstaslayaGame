@@ -261,7 +261,7 @@ player.body.setVelocityX(0);
 
 	
 	 handleCollisionItem(item, enemy) {
-		console.log('item hit')
+		//console.log('item hit')
 		enemy.destroy()
         // Handle what happens when a player hits an enemy
     }
@@ -316,9 +316,10 @@ player.body.setVelocityX(0);
 
     // When the restart button is clicked, restart the game
     restartButton.on('pointerdown', () => {
-        //this.scene.restart();
+		 this.enemies.clear(true, true);
+        this.scene.restart();
 	
-		 this.resetGame();
+		// this.resetGame();
 		
     });
 
