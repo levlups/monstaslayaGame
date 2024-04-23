@@ -20,6 +20,43 @@ export default class VampScene extends Phaser.Scene {
     }
 
     create() {
+		
+		
+		  // Start a 2-minute countdown timer
+       // this.initialTime = 120; // 2 minutes in seconds
+		
+		this.initialTime = 10; // 2 minutes in seconds
+
+        // Display timer text
+        this.timeText = this.add.text(16, 16, 'Time: ' + this.formatTime(this.initialTime), {
+            fontSize: '32px',
+            fill: '#FFFFFF'
+        }).setDepth(4);
+
+        // Each second call the countdown function
+        this.timedEvent = this.time.addEvent({
+            delay: 1000,
+            callback: this.onCountdown,
+            callbackScope: this,
+            loop: true
+        });
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		 this.hammer = this.physics.add.sprite(100, 100, 'hammer');
 this.hammer.displayHeight=32;
   this.hammer.displayWidth=32;
@@ -81,6 +118,14 @@ this.player2.displayWidth = 50;
     this.anims.create({
           key: 'walky',
          frames: this.anims.generateFrameNumbers('enemy', { frames: [4,5,6,7] }),
+        frameRate: 10,
+        repeat: -1
+    });
+	
+	
+	 this.anims.create({
+          key: 'walky2',
+         frames: this.anims.generateFrameNumbers('enemy', { frames: [8,9,10,11] }),
         frameRate: 10,
         repeat: -1
     });
@@ -178,6 +223,64 @@ player.body.setVelocityX(0);
 		console.log('item hit')
 		enemy.destroy()
         // Handle what happens when a player hits an enemy
+    }
+	
+	
+	
+	
+	 onCountdown() {
+        this.initialTime -= 1; // Decrease the timer by one
+        this.timeText.setText('Time: ' + this.formatTime(this.initialTime));
+
+        // When the timer reaches zero, reset the game
+        if (this.initialTime <= 0) {
+            this.timedEvent.remove(); // Stop the timer
+            this.resetGame();
+        }
+    }
+
+    resetGame() {
+        // Kill all enemies
+        this.enemies.clear(true, true);
+
+        // Reset player position to the middle of the map
+        this.player.setPosition(this.sys.game.config.width / 2, this.sys.game.config.height / 2);
+		
+		
+		// Add enemies to the group
+        for (let i = 0; i < 20; i++) {
+            let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(100, 500), 'enemy');
+			  enemy.anims.play('walky2', true);
+            // Set up enemy behavior here
+        }
+
+        // Enable collision between player and enemies
+        this.physics.add.collider(this.player, this.enemies, this.handleCollision, null, this);
+
+        // You could also restart the scene or reset other game elements as needed
+        // this.scene.restart();
+		
+		 // Reset the initial time for the timer
+    //this.initialTime = 120; // 2 minutes in seconds
+	 this.initialTime = 10; // 2 minutes in seconds
+
+    // Restart the timer event
+    this.timedEvent = this.time.addEvent({
+        delay: 1000,
+        callback: this.onCountdown,
+        callbackScope: this,
+        loop: true
+    });
+	
+    }
+
+    formatTime(seconds) {
+        // Convert seconds (s) to a mm:ss format
+        const minutes = Math.floor(seconds / 60);
+    const partInSeconds = seconds % 60;
+    const formattedMinutes = String(minutes).padStart(2, '0');
+    const formattedSeconds = String(partInSeconds).padStart(2, '0');
+    return `${formattedMinutes}:${formattedSeconds}`;
     }
 
     
