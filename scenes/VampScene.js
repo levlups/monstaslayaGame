@@ -10,6 +10,7 @@ export default class VampScene extends Phaser.Scene {
 		     this.playerMaxHealth = 100;
         this.playerHealth = this.playerMaxHealth;
 		this.hitCooldown = false; // Flag to manage hit cooldown
+		 this.currentLevel = 1; // Initialize level counter
     }
 
 
@@ -23,7 +24,11 @@ export default class VampScene extends Phaser.Scene {
     }
 
     create() {
-		
+		 // Create level text display
+        this.levelText = this.add.text(this.sys.game.config.width - 10, 10, 'Level: ' + this.currentLevel, {
+            fontSize: '32px',
+            fill: '#FFFFFF'
+        }).setOrigin(1, 0).setDepth(5); // Anchored top right
 		
 		  // Start a 2-minute countdown timer
        // this.initialTime = 120; // 2 minutes in seconds
@@ -339,6 +344,10 @@ player.body.setVelocityX(0);
 }
 
     resetGame() {
+		// Reset game elements, then increase the level and update the level text
+        this.currentLevel++;
+        this.levelText.setText('Level: ' + this.currentLevel);
+		
 			this.hitCooldown = false;
         // Kill all enemies
         this.enemies.clear(true, true);
