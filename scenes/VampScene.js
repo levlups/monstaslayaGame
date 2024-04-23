@@ -141,12 +141,7 @@ this.player2.displayWidth = 50;
     });
 	
 	
-	 this.anims.create({
-          key: 'walky2',
-         frames: this.anims.generateFrameNumbers('enemy', { frames: [8,9,10,11] }),
-        frameRate: 10,
-        repeat: -1
-    });
+	
 
         // Add enemies to the group
         for (let i = 0; i < 20; i++) {
@@ -289,12 +284,16 @@ player.body.setVelocityX(0);
         this.timedEvent.remove(); // Stop the timer
 
         // Check if all enemies are dead
-        if (this.enemies.countActive(true) === 0) {
+		if (this.enemies.countActive(true)  > 0) {
+            this.resetGame(); // Reset the game if all enemies are dead
+		
+        } 
+        else if (this.enemies.countActive(true) === 0) {
             this.resetGame(); // Reset the game if all enemies are dead
 		
         } else {
-            this.endGame(); // End the game if any enemies are alive
-			
+           this.endGame(); // End the game if any enemies are alive
+			 //this.resetGame();
         }
     }
 	
@@ -355,11 +354,16 @@ player.body.setVelocityX(0);
         // Reset player position to the middle of the map
         this.player.setPosition(this.sys.game.config.width / 2, this.sys.game.config.height / 2);
 		
-		
+		 this.anims.create({
+          key: 'walky'+ this.currentLevel,
+         frames: this.anims.generateFrameNumbers('enemy', { frames: [4+ (this.currentLevel *4),5+(this.currentLevel*4),6+(this.currentLevel*4),7+(this.currentLevel*4)] }),
+        frameRate: 10,
+        repeat: -1
+    });
 		// Add enemies to the group
         for (let i = 0; i < 20; i++) {
             let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(100, 500), 'enemy');
-			  enemy.anims.play('walky2', true);
+			  enemy.anims.play('walky'+this.currentLevel, true);
             // Set up enemy behavior here
         }
 
