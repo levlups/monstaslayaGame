@@ -232,12 +232,38 @@ player.body.setVelocityX(0);
         this.initialTime -= 1; // Decrease the timer by one
         this.timeText.setText('Time: ' + this.formatTime(this.initialTime));
 
-        // When the timer reaches zero, reset the game
-        if (this.initialTime <= 0) {
-            this.timedEvent.remove(); // Stop the timer
-            this.resetGame();
+          // When the timer reaches zero, check if any enemies are alive
+    if (this.initialTime <= 0) {
+        this.timedEvent.remove(); // Stop the timer
+
+        // Check if all enemies are dead
+        if (this.enemies.countActive(true) === 0) {
+            this.resetGame(); // Reset the game if all enemies are dead
+        } else {
+            this.endGame(); // End the game if any enemies are alive
         }
     }
+	
+    }
+	
+	endGame() {
+    // Stop all enemies
+    this.enemies.setVelocityX(0);
+    this.enemies.setVelocityY(0);
+
+    // Display "You are dead" text
+    this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'You are dead', {
+        fontSize: '64px',
+        fill: '#FF0000'
+    }).setOrigin(0.5);
+
+    // Optionally, stop the player from moving or taking any actions
+    // ... your code to stop the player ...
+
+    // You could also stop the scene or go to a game over scene
+    // this.scene.stop();
+    // this.scene.start('GameOverScene');
+}
 
     resetGame() {
         // Kill all enemies
