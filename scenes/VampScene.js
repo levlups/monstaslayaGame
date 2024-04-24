@@ -122,7 +122,13 @@ this.player.displayWidth = 50;
 
 
 
-		 var button = this.add.dom(400, 300, 'button', null, 'Click Me!');
+		 // Specify your button image
+    var buttonImage = 'assets/heart.png'; // Ensure the path is correct
+    var buttonText = 'Click Me!'; // Text you might want to add alongside the image
+
+    // Create a button with an image inside it
+    var buttonHtml = '<button style="background-color: transparent; border: none; outline: none; cursor: pointer;"><img src="' + buttonImage + '" alt="Button Image" style="width: 50px; height: auto;">' + buttonText + '</button>';
+    var button = this.add.dom(0, 0).createFromHTML(buttonHtml);
     button.addListener('click');
     button.on('click', function () {
         console.log('Button clicked!');
