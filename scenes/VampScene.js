@@ -31,7 +31,11 @@ export default class VampScene extends Phaser.Scene {
     }
 
     create() {
-		
+		 var button = this.add.dom(400, 300, 'button', null, 'Click Me!');
+    button.addListener('click');
+    button.on('click', function () {
+        console.log('Button clicked!');
+    });
 		mainscene=this;
 		
 		
