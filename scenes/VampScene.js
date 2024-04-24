@@ -124,7 +124,7 @@ this.player.displayWidth = 50;
 
 
 		 // Specify your button image
-    var buttonImage = 'assets/heart.png'; // Ensure the path is correct
+    var buttonImage = 'assets/button.png'; // Ensure the path is correct
     var buttonText = 'Click Me!'; // Text you might want to add alongside the image
 
     // Create a button with an image inside it
