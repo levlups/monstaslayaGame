@@ -128,18 +128,7 @@ this.player.displayWidth = 50;
 
 
 
-		 // Specify your button image
-    var buttonImage = 'assets/button.png'; // Ensure the path is correct
-    var buttonText = 'Click Me!'; // Text you might want to add alongside the image
 
-    // Create a button with an image inside it
-    var buttonHtml = '<button style="background-color: transparent; border: none; outline: none; cursor: pointer;"><img src="' + buttonImage + '" alt="Button Image" style="width: 50px; height: auto;">' + buttonText + '</button>';
-    button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2).createFromHTML(buttonHtml);
-    button.addListener('click');
-    button.on('click', function () {
-        console.log('Button clicked!');
-	      button.setVisible(false); // This hides the button
-    });
 
 
 
@@ -393,6 +382,8 @@ player.body.setVelocityX(0);
 		if (this.enemies.countActive(true)  > 0) {
 			
 			if(!this.gameEnded){
+
+				
             this.resetGame(); // Reset the game if all enemies are dead
 			}
 		
@@ -415,6 +406,21 @@ player.body.setVelocityX(0);
     }
 	
 	endGame() {
+
+				 // Specify your button image
+    var buttonImage = 'assets/button.png'; // Ensure the path is correct
+    var buttonText = 'Click Me!'; // Text you might want to add alongside the image
+
+    // Create a button with an image inside it
+    var buttonHtml = '<button style="background-color: transparent; border: none; outline: none; cursor: pointer;"><img src="' + buttonImage + '" alt="Button Image" style="width: 50px; height: auto;">' + buttonText + '</button>';
+    button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2).createFromHTML(buttonHtml);
+    button.addListener('click');
+    button.on('click', function () {
+        console.log('Button clicked!');
+	      button.setVisible(false); // This hides the button
+	    this.currentLevel=0;
+		 this.resetGame();
+    });
 		
 		this.enemies.clear(true, true);
     // Stop all enemies
