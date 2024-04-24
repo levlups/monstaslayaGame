@@ -282,6 +282,9 @@ const config = {
   height: 800,
   parent: "game-container",
   pixelArt: true,
+   dom: {
+        createContainer: true
+    },
   physics: {
     default: "arcade",
     arcade: {
