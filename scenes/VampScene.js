@@ -472,7 +472,7 @@ player.body.setVelocityX(0);
 }
 
     resetGame() {
-		button.setVisible(true); 
+		//button.setVisible(true); 
 		//this.playerHealth=100;
 		//this.updateHealthBar();
 		// Reset game elements, then increase the level and update the level text
