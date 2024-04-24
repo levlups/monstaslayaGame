@@ -2,6 +2,7 @@
 let player;
 let cursors;
 let mainscene;
+var button;
  var p = location.hash;
         console.log(p.substring(1));
 		console.log(p)
@@ -128,7 +129,7 @@ this.player.displayWidth = 50;
 
     // Create a button with an image inside it
     var buttonHtml = '<button style="background-color: transparent; border: none; outline: none; cursor: pointer;"><img src="' + buttonImage + '" alt="Button Image" style="width: 50px; height: auto;">' + buttonText + '</button>';
-    var button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2).createFromHTML(buttonHtml);
+    button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2).createFromHTML(buttonHtml);
     button.addListener('click');
     button.on('click', function () {
         console.log('Button clicked!');
@@ -460,7 +461,7 @@ player.body.setVelocityX(0);
 }
 
     resetGame() {
-		
+		button.setVisible(true); 
 		//this.playerHealth=100;
 		//this.updateHealthBar();
 		// Reset game elements, then increase the level and update the level text
