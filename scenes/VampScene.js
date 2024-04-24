@@ -33,7 +33,7 @@ export default class VampScene extends Phaser.Scene {
     create() {
 
 
-	    button.setDepth(5);
+	    
 		mainscene=this;
 		
 		
