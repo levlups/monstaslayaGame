@@ -36,6 +36,8 @@ export default class VampScene extends Phaser.Scene {
     button.on('click', function () {
         console.log('Button clicked!');
     });
+
+	    button.setDepth(5);
 		mainscene=this;
 		
 		
