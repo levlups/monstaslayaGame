@@ -343,6 +343,9 @@ player.body.setVelocityX(0);
         // Handle what happens when a player hits an enemy
     }
 	 handleCollisionHeart(item, enemy) {
+
+		 this.playerHealth+=50;
+		this.updateHealthBar();
 		console.log('heart')
 		item.destroy()
 		console.log('feeling better')
@@ -443,8 +446,8 @@ player.body.setVelocityX(0);
 
     resetGame() {
 		
-		this.playerHealth=100;
-		this.updateHealthBar();
+		//this.playerHealth=100;
+		//this.updateHealthBar();
 		// Reset game elements, then increase the level and update the level text
         this.currentLevel++;
         this.levelText.setText('Level: ' + this.currentLevel);
