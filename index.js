@@ -203,7 +203,7 @@ this.anims.create({
 	 
 	 
 	 lol.anims.play('idle', true);	
-	mainscene.scene.scene.cameras.main.centerOn(player.x, player.y);
+	mainscene.scene.scene.cameras.main.centerOn(this.player.x, this.player.y);
 	if (this.AKey.isDown || cursors.left.isDown)
     {
         player.body.setVelocityX(-200);

@@ -1,6 +1,7 @@
 
 let player;
 let cursors;
+let mainscene;
  var p = location.hash;
         console.log(p.substring(1));
 		console.log(p)
@@ -11,6 +12,9 @@ export default class VampScene extends Phaser.Scene {
         this.playerHealth = this.playerMaxHealth;
 		this.hitCooldown = false; // Flag to manage hit cooldown
 		 this.currentLevel = 1; // Initialize level counter
+		 this.gameEnded=false;
+		 this.endText;
+		 this.restartButton;
     }
 
 
@@ -19,11 +23,29 @@ export default class VampScene extends Phaser.Scene {
         this.load.image('background', 'assets/background.jpg');
         this.load.spritesheet('player', 'assets/hero.png', { frameWidth: 180, frameHeight: 198 });
 		 this.load.spritesheet('enemy', 'assets/enemy.png', { frameWidth: 32, frameHeight: 32 });
+		 
+		 
 		  this.load.image('hammer', 'assets/hammer.png'); 
+		   this.load.image('heart', 'assets/heart.png'); 
         // Add more assets as needed
     }
 
     create() {
+		
+		mainscene=this;
+		
+		
+		    // Start a repeating timer to shoot the hammer
+    this.time.addEvent({
+        delay: 1000,    // 1000 ms = 1 second
+        callback: this.shootHammer,
+        callbackScope: this,
+        loop: true
+    });
+		
+		
+		
+		
 		 // Create level text display
         this.levelText = this.add.text(this.sys.game.config.width - 10, 10, 'Level: ' + this.currentLevel, {
             fontSize: '32px',
@@ -59,8 +81,7 @@ export default class VampScene extends Phaser.Scene {
 		
 		
 		
-		
-		
+		// this.hammer2 = this.physics.add.sprite(100, 100, 'hammer');
 		
 		
 		
@@ -96,6 +117,9 @@ this.hammer.displayHeight=32;
         this.player = this.physics.add.sprite(400, 300, 'player');
 this.player.displayWidth = 50;
         this.player.displayHeight = 50;
+		
+		 this.heart = this.physics.add.sprite(100, 100, 'heart');
+		  this.physics.add.collider(this.heart, this.player,this.handleCollisionHeart, null, this);
 		
 		
 		  // Create a health bar
@@ -145,7 +169,7 @@ this.player2.displayWidth = 50;
 
         // Add enemies to the group
         for (let i = 0; i < 20; i++) {
-            let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(100, 500), 'enemy');
+            let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(10, 50), 'enemy');
 			  enemy.anims.play('walky', true);
             // Set up enemy behavior here
         }
@@ -158,8 +182,47 @@ this.player2.displayWidth = 50;
         // Set up player animations and controls here
     }
 	
+	   shootHammer() {
+        if (!this.enemies || this.enemies.getChildren().length === 0) {
+            return; // No enemies to shoot at
+        }
+
+         // Find the closest enemy using the custom function
+    let closestEnemy = this.findClosestEnemy();
+
+		if (closestEnemy) {
+			// Create a hammer projectile
+			let hammer = this.physics.add.sprite(this.player.x, this.player.y, 'hammer');
+			this.physics.moveToObject(hammer, closestEnemy, 300); // Move at 300 pixels/sec
+			hammer.displayHeight=32;
+			hammer.displayWidth=32;
+			// Optionally, add collision for the hammer with the enemy
+			this.physics.add.collider(hammer, closestEnemy, (hammer, enemy) => {
+				hammer.destroy(); // Destroy the hammer on hit
+				enemy.destroy(); // Optionally destroy the enemy or apply damage
+				// Additional effects upon hit can be added here
+			});
+		}
+    }
+	findClosestEnemy() {
+    let closestEnemy = null;
+    let closestDistance = Infinity;
+
+    this.enemies.getChildren().forEach((enemy) => {
+        let distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+        if (distance < closestDistance) {
+            closestEnemy = enemy;
+            closestDistance = distance;
+        }
+    });
+
+    return closestEnemy;
+}
+
+	
 
     update() {
+		mainscene.scene.scene.cameras.main.centerOn(this.player.x, this.player.y);
 		
 		 sendMessage(JSON.stringify({id:p.substring(1),x:player.x,y:player.y,side:player.flipX,movingx:player.body.velocity.x,movingy:player.body.velocity.y}))
 		 if(p.substring(1) !== otherplayer.id){
@@ -172,6 +235,11 @@ this.player2.displayWidth = 50;
 				 }else{
 					  this.player2.anims.play('idle', true);
 				 }
+		 }
+		 
+		 if(this.gameEnded){
+			 
+			 return;
 		 }
         // Handle player movement and enemy behavior updates
 		// Move each enemy towards the player
@@ -236,7 +304,10 @@ player.body.setVelocityX(0);
 
             if (this.playerHealth <= 0) {
                 // Player is dead, trigger the end game sequence
+				if(!this.gameEnded){
                 this.endGame();
+				 this.gameEnded=true
+				}
             } else {
                 // Player was hit but is still alive, start hit cooldown
                 this.startHitCooldown();
@@ -265,7 +336,12 @@ player.body.setVelocityX(0);
 		enemy.destroy()
         // Handle what happens when a player hits an enemy
     }
-	
+	 handleCollisionHeart(item, enemy) {
+		console.log('heart')
+		item.destroy()
+		console.log('feeling better')
+        // Handle what happens when a player hits an enemy
+    }
 	
 	    updateHealthBar() {
         // Scale the health bar according to the player's health
@@ -285,27 +361,41 @@ player.body.setVelocityX(0);
 
         // Check if all enemies are dead
 		if (this.enemies.countActive(true)  > 0) {
+			
+			if(!this.gameEnded){
             this.resetGame(); // Reset the game if all enemies are dead
+			}
 		
         } 
         else if (this.enemies.countActive(true) === 0) {
+			if(!this.gameEnded){
             this.resetGame(); // Reset the game if all enemies are dead
+			}
 		
         } else {
+			
+			if(!this.gameEnded){
            this.endGame(); // End the game if any enemies are alive
 			 //this.resetGame();
+			 this.gameEnded=true
+			}
         }
     }
 	
     }
 	
 	endGame() {
+		
+		this.enemies.clear(true, true);
     // Stop all enemies
-    this.enemies.setVelocityX(0);
-    this.enemies.setVelocityY(0);
+    //this.enemies.setVelocityX(0);
+    //this.enemies.setVelocityY(0);
+	
+	this.player.setVelocityX(0);
+    this.player.setVelocityY(0);
 
     // Display "You are dead" text
-    this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'You are dead', {
+  this.endText=  this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'You are dead', {
         fontSize: '64px',
         fill: '#FF0000'
     }).setOrigin(0.5);
@@ -313,23 +403,26 @@ player.body.setVelocityX(0);
     // Optionally, stop the player from moving or taking any actions
     // ... your code to stop the player ...
     // Create a restart button
-    let restartButton = this.add.text(this.sys.game.config.width / 2, (this.sys.game.config.height / 2)+50, 'Restart', {
+    this.restartButton = this.add.text(this.sys.game.config.width / 2, (this.sys.game.config.height / 2)+50, 'Restart', {
         fontSize: '32px',
         fill: '#FFFFFF'
     }).setOrigin(0.5).setInteractive();
 
     // When the restart button is clicked, restart the game
-    restartButton.on('pointerdown', () => {
+    this.restartButton.on('pointerdown', () => {
 		 this.enemies.clear(true, true);
-        this.scene.restart();
-	
-		// this.resetGame();
+		  this.gameEnded=false
+      //  this.scene.restart();
+	  this.restartButton.setText('')
+	this.endText.setText('')
+	this.currentLevel=0;
+		 this.resetGame();
 		
     });
 
     // Change the button color when hovered
-    restartButton.on('pointerover', () => restartButton.setStyle({ fill: '#FFCC00' }));
-    restartButton.on('pointerout', () => restartButton.setStyle({ fill: '#FFFFFF' }));
+    this.restartButton.on('pointerover', () => this.restartButton.setStyle({ fill: '#FFCC00' }));
+    this.restartButton.on('pointerout', () => this.restartButton.setStyle({ fill: '#FFFFFF' }));
 
     // Optionally, stop the player from moving or taking any actions
     // ... your code to stop the player ...
@@ -343,13 +436,16 @@ player.body.setVelocityX(0);
 }
 
     resetGame() {
+		
+		this.playerHealth=100;
+		this.updateHealthBar();
 		// Reset game elements, then increase the level and update the level text
         this.currentLevel++;
         this.levelText.setText('Level: ' + this.currentLevel);
 		
 			this.hitCooldown = false;
         // Kill all enemies
-        this.enemies.clear(true, true);
+      //  this.enemies.clear(true, true);
 
         // Reset player position to the middle of the map
         this.player.setPosition(this.sys.game.config.width / 2, this.sys.game.config.height / 2);
