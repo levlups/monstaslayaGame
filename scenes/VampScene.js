@@ -31,11 +31,7 @@ export default class VampScene extends Phaser.Scene {
     }
 
     create() {
-		 var button = this.add.dom(400, 300, 'button', null, 'Click Me!');
-    button.addListener('click');
-    button.on('click', function () {
-        console.log('Button clicked!');
-    });
+
 
 	    button.setDepth(5);
 		mainscene=this;
@@ -123,6 +119,18 @@ this.hammer.displayHeight=32;
         this.player = this.physics.add.sprite(400, 300, 'player');
 this.player.displayWidth = 50;
         this.player.displayHeight = 50;
+
+
+
+		 var button = this.add.dom(400, 300, 'button', null, 'Click Me!');
+    button.addListener('click');
+    button.on('click', function () {
+        console.log('Button clicked!');
+    });
+
+
+
+	    
 		
 		 this.heart = this.physics.add.sprite(100, 100, 'heart');
 		  this.physics.add.collider(this.heart, this.player,this.handleCollisionHeart, null, this);
