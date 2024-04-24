@@ -282,6 +282,12 @@ const config = {
   height: 800,
   parent: "game-container",
   pixelArt: true,
+	 scale: {
+        mode: Phaser.Scale.RESIZE,
+        parent: 'phaser-example',
+        width: '100%',
+        height: '100%'
+    },
    dom: {
         createContainer: true
     },
