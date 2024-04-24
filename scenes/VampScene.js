@@ -128,10 +128,11 @@ this.player.displayWidth = 50;
 
     // Create a button with an image inside it
     var buttonHtml = '<button style="background-color: transparent; border: none; outline: none; cursor: pointer;"><img src="' + buttonImage + '" alt="Button Image" style="width: 50px; height: auto;">' + buttonText + '</button>';
-    var button = this.add.dom(0, 0).createFromHTML(buttonHtml);
+    var button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2).createFromHTML(buttonHtml);
     button.addListener('click');
     button.on('click', function () {
         console.log('Button clicked!');
+	      button.setVisible(false); // This hides the button
     });
 
 
