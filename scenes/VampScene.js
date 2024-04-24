@@ -33,12 +33,12 @@ export default class VampScene extends Phaser.Scene {
 
     create() {
 
- // Delay for 5 seconds before showing the video
+/* // Delay for 5 seconds before showing the video
     this.time.delayedCall(5000, function() {
         var videoHtml = '<iframe width="560" height="315" src="https://www.youtube.com/embed/lWLcqtf2fos?si=CdgFNmPac7L31syY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; muted; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
         var video = this.add.dom(400, 300).createFromHTML(videoHtml);
         video.setOrigin(0.5); // This centers the iframe
-    }, [], this);
+    }, [], this);*/
 	    
 		mainscene=this;
 		
