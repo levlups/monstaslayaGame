@@ -28,6 +28,7 @@ export default class VampScene extends Phaser.Scene {
 		 
 		 
 		  this.load.image('hammer', 'assets/hammer.png'); 
+		   this.load.image('whip', 'assets/whip.png'); 
 		   this.load.image('heart', 'assets/heart.png'); 
         // Add more assets as needed
     }
@@ -99,6 +100,10 @@ export default class VampScene extends Phaser.Scene {
 this.hammer.displayHeight=32;
   this.hammer.displayWidth=32;
   this.hammer.setDepth(3);
+  
+  
+
+  
   // Orbit parameters
   this.radius = 100;
   this.speed = 0.05;
@@ -128,10 +133,15 @@ this.player.displayWidth = 50;
         this.player.displayHeight = 50;
 
 
+  
+  this.whip = this.physics.add.sprite(150, 100, 'whip');
+this.whip.displayHeight=32;
+  this.whip.displayWidth=32;
+  this.whip.setDepth(3);
 
 
-
-
+// Collider to attach the whip to the player
+        this.physics.add.collider(this.player, this.whip, this.attachWhipToPlayer, null, this);
 
 		
 		
@@ -195,6 +205,11 @@ this.player2.displayWidth = 50;
         // Set up player animations and controls here
     }
 	
+	attachWhipToPlayer(player, whip) {
+    this.whipAttached = true; // Set a flag that the whip is attached
+    whip.setVelocity(0, 0); // Stop the whip's movement
+}
+	
 	   shootHammer() {
         if (!this.enemies || this.enemies.getChildren().length === 0) {
             return; // No enemies to shoot at
@@ -252,6 +267,11 @@ this.player2.displayWidth = 50;
 	
 
     update() {
+		
+		// If the whip is attached, update its position to match the player
+    if (this.whipAttached) {
+        this.whip.setPosition(this.player.x, this.player.y);
+    }
 		mainscene.scene.scene.cameras.main.centerOn(this.player.x, this.player.y);
 		
 		 sendMessage(JSON.stringify({id:p.substring(1),x:player.x,y:player.y,side:player.flipX,movingx:player.body.velocity.x,movingy:player.body.velocity.y}))
@@ -462,11 +482,11 @@ player.body.setVelocityX(0);
 	
 				 // Specify your button image
     var buttonImage = 'assets/button.png'; // Ensure the path is correct
-    var buttonText = 'Click Me!'; // Text you might want to add alongside the image
+   var buttonText = ''; // Text you might want to add alongside the image
 
     // Create a button with an image inside it
     var buttonHtml = '<button style="background-color: transparent; border: none; outline: none; cursor: pointer;"><img src="' + buttonImage + '" alt="Button Image" style="width: 50px; height: auto;">' + buttonText + '</button>';
-    button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2).createFromHTML(buttonHtml);
+    button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2+80).createFromHTML(buttonHtml);
     button.addListener('click');
     button.on('click', function () {
         console.log('Button clicked!');
@@ -474,14 +494,15 @@ player.body.setVelocityX(0);
 	   
 		  mainscene.gameEnded=false
       
-	  mainscene.restartButton.setText('')
+	  //mainscene.restartButton.setText('')
 	mainscene.endText.setText('')
 	mainscene.currentLevel=0;
 	mainscene.resetGame();
 	button.setVisible(false);  // This hides the button
     });
 
-	
+	 button.on('pointerover', () => button.setStyle({ fill: '#FFCC00' }));
+    button.on('pointerout', () => button.setStyle({ fill: '#FFFFFF' }));
 	
 }
 
