@@ -12,7 +12,7 @@ export default class VampScene extends Phaser.Scene {
 		     this.playerMaxHealth = 100;
         this.playerHealth = this.playerMaxHealth;
 		this.hitCooldown = false; // Flag to manage hit cooldown
-		 this.currentLevel = 1; // Initialize level counter
+		 this.currentLevel = 0; // Initialize level counter
 		 this.gameEnded=false;
 		 this.endText;
 		 this.restartButton;
@@ -133,10 +133,6 @@ this.player.displayWidth = 50;
 
 
 
-	    
-		
-		 this.heart = this.physics.add.sprite(100, 100, 'heart');
-		  this.physics.add.collider(this.heart, this.player,this.handleCollisionHeart, null, this);
 		
 		
 		  // Create a health bar
@@ -215,11 +211,28 @@ this.player2.displayWidth = 50;
 			hammer.displayWidth=32;
 			// Optionally, add collision for the hammer with the enemy
 			this.physics.add.collider(hammer, closestEnemy, (hammer, enemy) => {
+				
+				 // Randomly decide to drop a heart
+        if (Math.random() < 0.25) { // 25% chance to drop a heart
+            this.dropHeart(enemy.x, enemy.y);
+        }
+				
+				
 				hammer.destroy(); // Destroy the hammer on hit
 				enemy.destroy(); // Optionally destroy the enemy or apply damage
 				// Additional effects upon hit can be added here
 			});
 		}
+    }
+	 dropHeart(x, y) {
+        let heart = this.physics.add.sprite(x, y, 'heart');
+        heart.setCollideWorldBounds(true);
+        this.physics.add.overlap(this.player, heart, this.collectHeart, null, this);
+    }
+	collectHeart(player, heart) {
+        heart.destroy();
+        this.playerHealth = Math.min(this.playerHealth + 10, this.playerMaxHealth);
+        this.updateHealthBar();
     }
 	findClosestEnemy() {
     let closestEnemy = null;
@@ -353,15 +366,7 @@ player.body.setVelocityX(0);
 		enemy.destroy()
         // Handle what happens when a player hits an enemy
     }
-	 handleCollisionHeart(item, enemy) {
-
-		 this.playerHealth+=50;
-		this.updateHealthBar();
-		console.log('heart')
-		item.destroy()
-		console.log('feeling better')
-        // Handle what happens when a player hits an enemy
-    }
+	 
 	
 	    updateHealthBar() {
         // Scale the health bar according to the player's health
@@ -408,20 +413,7 @@ player.body.setVelocityX(0);
 	
 	endGame() {
 
-				 // Specify your button image
-    var buttonImage = 'assets/button.png'; // Ensure the path is correct
-    var buttonText = 'Click Me!'; // Text you might want to add alongside the image
-
-    // Create a button with an image inside it
-    var buttonHtml = '<button style="background-color: transparent; border: none; outline: none; cursor: pointer;"><img src="' + buttonImage + '" alt="Button Image" style="width: 50px; height: auto;">' + buttonText + '</button>';
-    button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2).createFromHTML(buttonHtml);
-    button.addListener('click');
-    button.on('click', function () {
-        console.log('Button clicked!');
-	      button.setVisible(false); // This hides the button
-	    this.currentLevel=0;
-		 this.resetGame();
-    });
+	
 		
 		this.enemies.clear(true, true);
     // Stop all enemies
@@ -440,7 +432,7 @@ player.body.setVelocityX(0);
     // Optionally, stop the player from moving or taking any actions
     // ... your code to stop the player ...
     // Create a restart button
-    this.restartButton = this.add.text(this.sys.game.config.width / 2, (this.sys.game.config.height / 2)+50, 'Restart', {
+   /* this.restartButton = this.add.text(this.sys.game.config.width / 2, (this.sys.game.config.height / 2)+50, 'Restart', {
         fontSize: '32px',
         fill: '#FFFFFF'
     }).setOrigin(0.5).setInteractive();
@@ -459,7 +451,7 @@ player.body.setVelocityX(0);
 
     // Change the button color when hovered
     this.restartButton.on('pointerover', () => this.restartButton.setStyle({ fill: '#FFCC00' }));
-    this.restartButton.on('pointerout', () => this.restartButton.setStyle({ fill: '#FFFFFF' }));
+    this.restartButton.on('pointerout', () => this.restartButton.setStyle({ fill: '#FFFFFF' }));*/
 
     // Optionally, stop the player from moving or taking any actions
     // ... your code to stop the player ...
@@ -467,6 +459,27 @@ player.body.setVelocityX(0);
     // You could also stop the scene or go to a game over scene
     // this.scene.stop();
     // this.scene.start('GameOverScene');
+	
+				 // Specify your button image
+    var buttonImage = 'assets/button.png'; // Ensure the path is correct
+    var buttonText = 'Click Me!'; // Text you might want to add alongside the image
+
+    // Create a button with an image inside it
+    var buttonHtml = '<button style="background-color: transparent; border: none; outline: none; cursor: pointer;"><img src="' + buttonImage + '" alt="Button Image" style="width: 50px; height: auto;">' + buttonText + '</button>';
+    button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2).createFromHTML(buttonHtml);
+    button.addListener('click');
+    button.on('click', function () {
+        console.log('Button clicked!');
+	     
+	   
+		  mainscene.gameEnded=false
+      
+	  mainscene.restartButton.setText('')
+	mainscene.endText.setText('')
+	mainscene.currentLevel=0;
+	mainscene.resetGame();
+	button.setVisible(false);  // This hides the button
+    });
 
 	
 	
@@ -474,8 +487,8 @@ player.body.setVelocityX(0);
 
     resetGame() {
 		//button.setVisible(true); 
-		//this.playerHealth=100;
-		//this.updateHealthBar();
+		this.playerHealth=100;
+		this.updateHealthBar();
 		// Reset game elements, then increase the level and update the level text
         this.currentLevel++;
         this.levelText.setText('Level: ' + this.currentLevel);
