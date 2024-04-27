@@ -16,6 +16,8 @@ export default class VampScene extends Phaser.Scene {
 		 this.gameEnded=false;
 		 this.endText;
 		 this.restartButton;
+		 this.targetX = 0; 
+        this.targetY = 0;
     }
 
 
@@ -131,6 +133,13 @@ this.hammer.displayHeight=32;
         this.player = this.physics.add.sprite(400, 300, 'player');
 this.player.displayWidth = 50;
         this.player.displayHeight = 50;
+		
+		
+		  this.targetX = this.player.x; // Set initial target to player's starting position
+        this.targetY = this.player.y; // Set initial target to player's starting position
+        this.input.on('pointerdown', (pointer) => {
+            this.movePlayerToPoint(pointer.x, pointer.y);
+        });
 
 
   
@@ -268,6 +277,8 @@ this.player2.displayWidth = 50;
 
     update() {
 		
+		 
+		
 		// If the whip is attached, update its position to match the player
     if (this.whipAttached) {
         this.whip.setPosition(this.player.x, this.player.y);
@@ -309,28 +320,44 @@ this.player2.displayWidth = 50;
         player.body.setVelocityX(-200);
         player.anims.play('walk', true); // walk left
         player.flipX = true; // flip the sprite to the left
+		
+		 this.targetX = this.player.x;
+        this.targetY = this.player.y;
     }
     else if (this.DKey.isDown || cursors.right.isDown)
     {
         player.body.setVelocityX(200);
         player.anims.play('walk', true);
         player.flipX = false; // use the original sprite looking to the right
+		
+		 this.targetX = this.player.x;
+        this.targetY = this.player.y;
     }
    
     else if (this.WKey.isDown || cursors.up.isDown )
     {
         player.body.setVelocityY(-200); 
-        player.anims.play('walk', true);		
+        player.anims.play('walk', true);
+
+		this.targetX = this.player.x;
+        this.targetY = this.player.y;
+		
     }
 	else if (this.SKey.isDown || cursors.down.isDown )
     {
         player.body.setVelocityY(200);   
-        player.anims.play('walk', true);		
+        player.anims.play('walk', true);	
+
+		this.targetX = this.player.x;
+        this.targetY = this.player.y;
+		
     }
 	else{
 		player.body.setVelocityY(0);   
 player.body.setVelocityX(0);
-        player.anims.play('idle', true);		
+        player.anims.play('idle', true);	
+  // Logic to move player to clicked point
+       this.updatePlayerMovement();		
 	}
 		
 	 this.angle += this.speed;
@@ -342,6 +369,25 @@ player.body.setVelocityX(0);
 		
 		
 		
+    }
+	
+	    movePlayerToPoint(x, y) {
+        this.targetX = x;
+        this.targetY = y;
+    }
+
+    updatePlayerMovement() {
+        const reachedX = Math.abs(this.player.x - this.targetX) < 4; // Close enough to target x
+        const reachedY = Math.abs(this.player.y - this.targetY) < 4; // Close enough to target y
+
+        if (reachedX && reachedY) {
+            this.player.body.stop(); // Stop the player when the target is reached
+        } else {
+			
+            const speed = 200; // pixels per second
+            this.physics.moveTo(this.player, this.targetX, this.targetY, speed);
+			 this.player.anims.play('walk', true);
+        }
     }
 		
 		
