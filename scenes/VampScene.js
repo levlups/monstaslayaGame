@@ -170,6 +170,11 @@ this.player2.displayWidth = 50;
         this.player2.displayHeight = 50;
 		
 		player=this.player;
+		
+		
+		       this.loots = this.physics.add.group();
+		
+		
         // Create enemies group
         this.enemies = this.physics.add.group();
 		 // idle with only one frame, so repeat is not neaded
@@ -249,7 +254,9 @@ this.player2.displayWidth = 50;
 		}
     }
 	 dropHeart(x, y) {
-        let heart = this.physics.add.sprite(x, y, 'heart');
+		 
+		  let heart  = this.loots.create(x, y, 'heart');
+        //let heart = this.physics.add.sprite(x, y, 'heart');
         heart.setCollideWorldBounds(true);
         this.physics.add.overlap(this.player, heart, this.collectHeart, null, this);
     }
@@ -276,6 +283,14 @@ this.player2.displayWidth = 50;
 	
 
     update() {
+		
+		
+		 this.loots.getChildren().forEach((loot) => {
+            const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, loot.x, loot.y);
+            if (distance < 100) {
+                this.physics.moveToObject(loot, this.player, 200);
+            }
+        });
 		
 		 
 		
