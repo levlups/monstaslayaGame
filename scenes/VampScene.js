@@ -155,9 +155,9 @@ this.whip.displayHeight=32;
 		
 		
 		  // Create a health bar
+       // Health bar graphics
+        this.healthBarBackground = this.add.graphics();
         this.healthBar = this.add.graphics();
-        this.healthBar.fillStyle(0x00FF00, 1);
-        this.healthBar.fillRect(0, 0, this.sys.game.config.width, 24);
 		
 		
 		
@@ -283,13 +283,15 @@ this.player2.displayWidth = 50;
 	
 
     update() {
-		
+		 this.updateHealthBar()
 		
 		 this.loots.getChildren().forEach((loot) => {
             const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, loot.x, loot.y);
             if (distance < 100) {
                 this.physics.moveToObject(loot, this.player, 200);
-            }
+            }else{
+			loot.setVelocity(0, 0);
+			}
         });
 		
 		 
@@ -450,11 +452,21 @@ player.body.setVelocityX(0);
 	 
 	
 	    updateHealthBar() {
+		
+			   // Update health bar position and fill based on player's health
+        this.healthBarBackground.clear();
+        this.healthBarBackground.fillStyle(0x000000, 1);
+		const lolx=this.player.x
+		const loly=this.player.y
+        this.healthBarBackground.fillRect(lolx - 25, loly -40, 50, 10);
         // Scale the health bar according to the player's health
-        this.healthBar.scaleX = this.playerHealth / this.playerMaxHealth;
+       // this.healthBar.scaleX = this.playerHealth / this.playerMaxHealth;
         this.healthBar.clear();
-        this.healthBar.fillStyle(0x00FF00, 1);
-        this.healthBar.fillRect(0, 0, this.sys.game.config.width * this.healthBar.scaleX, 24);
+        this.healthBar.fillStyle(0xFF0000, 1);
+		// const fillWidth = Math.max(0, (this.player.Health / this.player.maxHealth) * 50);
+        this.healthBar.fillRect(lolx- 25, loly -40,(this.playerHealth / this.playerMaxHealth) * 50 , 10);
+        //this.healthBar.fillRect(this.player.x, this.player.y +42, this.playerHealth, 24);
+		
     }
 	
 	 onCountdown() {
