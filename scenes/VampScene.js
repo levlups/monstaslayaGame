@@ -18,6 +18,7 @@ export default class VampScene extends Phaser.Scene {
 		 this.restartButton;
 		 this.targetX = 0; 
         this.targetY = 0;
+	    this.playerExperience=0;
     }
 
 
@@ -670,9 +671,10 @@ player.body.setVelocityX(0);
     gainExperience(amount) {
         this.playerExperience += amount;
         const progress = this.playerExperience / this.experienceToLevelUp;
-     //   this.updateLevelUpBar(progress);
-	     this.updateLevelUpBar(amount);
-	    console.log(amount)
+        this.updateLevelUpBar(progress);
+	    console.log(progress)
+	     //this.updateLevelUpBar(amount);
+	    //console.log(amount)
     }
 
     
