@@ -91,10 +91,12 @@ export default class VampScene extends Phaser.Scene {
 		this.initialTime = 10; // 2 minutes in seconds
 
         // Display timer text
-        this.timeText = this.add.text(16, 16, 'Time: ' + this.formatTime(this.initialTime), {
+        this.timeText = this.add.text(50, 16, 'Time: ' + this.formatTime(this.initialTime), {
             fontSize: '32px',
             fill: '#FFFFFF'
         }).setDepth(4);
+
+	       this.uiContainer.add(this.timeText);
 
         // Each second call the countdown function
         this.timedEvent = this.time.addEvent({
