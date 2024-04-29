@@ -62,7 +62,7 @@ export default class VampScene extends Phaser.Scene {
         this.levelText = this.add.text(this.sys.game.config.width - 10, 10, 'Level: ' + this.currentLevel, {
             fontSize: '32px',
             fill: '#FFFFFF'
-        }).setOrigin(1, 0).setDepth(5); // Anchored top right
+        }).setOrigin(1, 0).setDepth(5).setScrollFactor(0); // Anchored top right
 		
 		  // Start a 2-minute countdown timer
        // this.initialTime = 120; // 2 minutes in seconds
