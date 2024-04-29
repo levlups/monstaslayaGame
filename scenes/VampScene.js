@@ -57,7 +57,7 @@ export default class VampScene extends Phaser.Scene {
 		
 		  // Create a container for UI elements
     this.uiContainer = this.add.container(this.cameras.main.worldView.x, this.cameras.main.worldView.y);
-    this.uiContainer.setScrollFactor(0);
+//    this.uiContainer.setScrollFactor(0);
 		
 		
 		 // Create level text display
