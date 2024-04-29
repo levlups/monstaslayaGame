@@ -37,6 +37,21 @@ export default class VampScene extends Phaser.Scene {
 
     create() {
 
+
+	    // Create level-up bar background
+    this.levelUpBarBackground = this.add.graphics();
+    this.levelUpBarBackground.fillStyle(0x000000, 1); // black background
+    this.levelUpBarBackground.fillRect(0, this.cameras.main.height - 20, this.cameras.main.width, 20);
+
+    // Create level-up bar fill
+    this.levelUpBarFill = this.add.graphics();
+    this.levelUpBarFill.fillStyle(0x00ff00, 1); // green fill
+    this.levelUpBarFill.fillRect(0, this.cameras.main.height - 20, 0, 20); // initially empty
+
+    // Fix the level-up bar to the camera
+    this.levelUpBarBackground.setScrollFactor(0);
+    this.levelUpBarFill.setScrollFactor(0);
+///////////////////////////////////////////////////////////////////////////
 /* // Delay for 5 seconds before showing the video
     this.time.delayedCall(5000, function() {
         var videoHtml = '<iframe width="560" height="315" src="https://www.youtube.com/embed/lWLcqtf2fos?si=CdgFNmPac7L31syY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; muted; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
@@ -642,6 +657,19 @@ player.body.setVelocityX(0);
     const formattedMinutes = String(minutes).padStart(2, '0');
     const formattedSeconds = String(partInSeconds).padStart(2, '0');
     return `${formattedMinutes}:${formattedSeconds}`;
+    }
+
+	    updateLevelUpBar(progress) {
+        const fillWidth = progress * this.cameras.main.width;
+        this.levelUpBarFill.clear();
+        this.levelUpBarFill.fillStyle(0x00ff00, 1);
+        this.levelUpBarFill.fillRect(0, this.cameras.main.height - 20, fillWidth, 20);
+    }
+
+    gainExperience(amount) {
+        this.playerExperience += amount;
+        const progress = this.playerExperience / this.experienceToLevelUp;
+        this.updateLevelUpBar(progress);
     }
 
     
