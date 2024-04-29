@@ -48,7 +48,7 @@ export default class VampScene extends Phaser.Scene {
     // Create level-up bar fill
     this.levelUpBarFill = this.add.graphics();
     this.levelUpBarFill.fillStyle(0x00ff00, 1); // green fill
-    this.levelUpBarFill.fillRect(0,0.1, this.cameras.main.width, 20); // initially empty
+    this.levelUpBarFill.fillRect(0,0, 0, 0); // initially empty
 
     // Fix the level-up bar to the camera
     this.levelUpBarBackground.setScrollFactor(0);
