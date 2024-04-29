@@ -19,6 +19,7 @@ export default class VampScene extends Phaser.Scene {
 		 this.targetX = 0; 
         this.targetY = 0;
 	    this.playerExperience=0;
+	    this.experienceToLevelUp=100;
     }
 
 
@@ -269,7 +270,7 @@ this.player2.displayWidth = 50;
 				
 				hammer.destroy(); // Destroy the hammer on hit
 				enemy.destroy(); // Optionally destroy the enemy or apply damage
-				this.gainExperience(0.1)
+				this.gainExperience(1)
 				// Additional effects upon hit can be added here
 			});
 		}
