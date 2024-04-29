@@ -268,7 +268,7 @@ this.player2.displayWidth = 50;
 				
 				hammer.destroy(); // Destroy the hammer on hit
 				enemy.destroy(); // Optionally destroy the enemy or apply damage
-				this.gainExperience(1)
+				this.gainExperience(0.1)
 				// Additional effects upon hit can be added here
 			});
 		}
