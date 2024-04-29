@@ -287,6 +287,9 @@ this.player2.displayWidth = 50;
 	
 
     update() {
+
+	     // Update the container position to stay at the top left of the camera view
+    this.uiContainer.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
 		 this.updateHealthBar()
 		
 		 this.loots.getChildren().forEach((loot) => {
