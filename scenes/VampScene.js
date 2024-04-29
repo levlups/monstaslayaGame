@@ -78,7 +78,7 @@ export default class VampScene extends Phaser.Scene {
 		
 		
 		 // Create level text display
-        this.levelText = this.add.text(0, 10, 'Level: ' + this.currentLevel, {
+        this.levelText = this.add.text(0, 30, 'Level: ' + this.currentLevel, {
             fontSize: '32px',
             fill: '#FFFFFF'
         }).setDepth(8); // Anchored top right
@@ -91,7 +91,7 @@ export default class VampScene extends Phaser.Scene {
 		this.initialTime = 10; // 2 minutes in seconds
 
         // Display timer text
-        this.timeText = this.add.text(this.cameras.main.width -220, 16, 'Time: ' + this.formatTime(this.initialTime), {
+        this.timeText = this.add.text(this.cameras.main.width -220, 30, 'Time: ' + this.formatTime(this.initialTime), {
             fontSize: '32px',
             fill: '#FFFFFF'
         }).setDepth(4);
