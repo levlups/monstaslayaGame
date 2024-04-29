@@ -43,12 +43,12 @@ export default class VampScene extends Phaser.Scene {
 	    // Create level-up bar background
     this.levelUpBarBackground = this.add.graphics();
     this.levelUpBarBackground.fillStyle(0x000000, 1); // black background
-    this.levelUpBarBackground.fillRect(0, this.cameras.main.height -780, this.cameras.main.width, 20);
+    this.levelUpBarBackground.fillRect(0, this.cameras.main.height -790, this.cameras.main.width, 20);
 
     // Create level-up bar fill
     this.levelUpBarFill = this.add.graphics();
     this.levelUpBarFill.fillStyle(0x00ff00, 1); // green fill
-    this.levelUpBarFill.fillRect(0, this.cameras.main.height -780 , this.cameras.main.width, 20); // initially empty
+    this.levelUpBarFill.fillRect(0, this.cameras.main.height -790, this.cameras.main.width, 20); // initially empty
 
     // Fix the level-up bar to the camera
     this.levelUpBarBackground.setScrollFactor(0);
@@ -668,7 +668,7 @@ player.body.setVelocityX(0);
         const fillWidth = progress * this.cameras.main.width;
         this.levelUpBarFill.clear();
         this.levelUpBarFill.fillStyle(0x00ff00, 1);
-        this.levelUpBarFill.fillRect(0, this.cameras.main.height -780, fillWidth, 20);
+        this.levelUpBarFill.fillRect(0, this.cameras.main.height -790, fillWidth, 20);
     }
 
     gainExperience(amount) {
