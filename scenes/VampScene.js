@@ -671,6 +671,7 @@ player.body.setVelocityX(0);
         this.playerExperience += amount;
         const progress = this.playerExperience / this.experienceToLevelUp;
         this.updateLevelUpBar(progress);
+	    console.log(progress)
     }
 
     
