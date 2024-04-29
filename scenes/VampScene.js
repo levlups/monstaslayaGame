@@ -64,7 +64,7 @@ export default class VampScene extends Phaser.Scene {
         this.levelText = this.add.text(0, 10, 'Level: ' + this.currentLevel, {
             fontSize: '32px',
             fill: '#FFFFFF'
-        }).setOrigin(1, 0).setDepth(5); // Anchored top right
+        }).setDepth(8); // Anchored top right
 
 	     this.uiContainer.add(this.levelText);
 		
