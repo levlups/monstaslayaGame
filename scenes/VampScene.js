@@ -91,7 +91,7 @@ export default class VampScene extends Phaser.Scene {
 		this.initialTime = 10; // 2 minutes in seconds
 
         // Display timer text
-        this.timeText = this.add.text(this.cameras.main.width -20, 16, 'Time: ' + this.formatTime(this.initialTime), {
+        this.timeText = this.add.text(this.cameras.main.width -200, 16, 'Time: ' + this.formatTime(this.initialTime), {
             fontSize: '32px',
             fill: '#FFFFFF'
         }).setDepth(4);
