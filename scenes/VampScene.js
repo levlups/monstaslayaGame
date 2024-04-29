@@ -474,6 +474,7 @@ player.body.setVelocityX(0);
 	 handleCollisionItem(item, enemy) {
 		//console.log('item hit')
 		enemy.destroy()
+		 this.gainExperience(1)
         // Handle what happens when a player hits an enemy
     }
 	 
