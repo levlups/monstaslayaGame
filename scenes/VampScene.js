@@ -668,7 +668,7 @@ player.body.setVelocityX(0);
         const fillWidth = progress * this.cameras.main.width;
         this.levelUpBarFill.clear();
         this.levelUpBarFill.fillStyle(0x00ff00, 1);
-        this.levelUpBarFill.fillRect(0, this.cameras.main.height -680, fillWidth, 20);
+        this.levelUpBarFill.fillRect(0, this.cameras.main.height -780, fillWidth, 20);
     }
 
     gainExperience(amount) {
