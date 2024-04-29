@@ -128,7 +128,7 @@ this.hammer.displayHeight=32;
 		
         // Add background
     const back=   this.add.image(400, 300, 'background')
-	   .setOrigin(0.5, 0.5);
+	   .setOrigin(0.5, 0.5).setDepth(1);
         // Based on your game size, it may "stretch" and distort.
         back.displayWidth = 800;
         back.displayHeight = 600;
