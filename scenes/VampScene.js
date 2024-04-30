@@ -295,8 +295,11 @@ this.player2.displayWidth = 50;
 
     // Create a text object at the enemy's position
     let hitText = this.add.text(enemy.x, enemy.y, hitPoints.toString(), {
-        fontSize: '20px',
-        fill: '#ff0000'
+         fontSize: '20px',
+        fill: '#ffffff',  // White text
+        stroke: '#000000', // Black stroke
+        strokeThickness: 3, // Stroke thickness in pixels
+        align: 'center'  // Center align text
     }).setOrigin(0.5, 0.5);
 
     // Make the text disappear after 1 second
