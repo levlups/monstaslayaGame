@@ -258,7 +258,8 @@ this.player2.displayWidth = 50;
 		
 		this.physics.add.collider(this.hammer, this.enemies, this.handleCollisionItem, null, this);
 		
-			this.physics.add.collider(this.circle, this.enemies, this.handleCollisionItem, null, this);
+			//this.physics.add.collider(this.circle, this.enemies, this.handleCollisionItem, null, this);
+	    this.physics.add.overlap(this.circle, this.enemies, this.handleCollisionItem, null, this);
 
         // Set up player animations and controls here
     }
