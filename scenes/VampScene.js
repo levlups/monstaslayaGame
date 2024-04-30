@@ -290,6 +290,9 @@ this.player2.displayWidth = 50;
         if (Math.random() < 0.25) { // 25% chance to drop a heart
             this.dropHeart(enemy.x, enemy.y);
         }
+
+
+				/////////////////////////////////////////////////////////////
 				 // Calculate a random number to display
     const hitPoints = Phaser.Math.Between(50, 100); // Random points between 50 and 100
 
@@ -306,10 +309,10 @@ this.player2.displayWidth = 50;
     this.time.delayedCall(1000, () => {
         hitText.destroy();
     });
-				
+////////////////////////////////////////////////////////////////				
 				hammer.destroy(); // Destroy the hammer on hit
 				enemy.destroy(); // Optionally destroy the enemy or apply damage
-				this.gainExperience(1)
+				this.gainExperience(hitPoints)
 				// Additional effects upon hit can be added here
 			});
 		}
@@ -513,7 +516,24 @@ player.body.setVelocityX(0);
 	
 	 handleCollisionItem(item, enemy) {
 		// console.log(item.name)
-		 
+		 				/////////////////////////////////////////////////////////////
+				 // Calculate a random number to display
+    const hitPoints = Phaser.Math.Between(50, 100); // Random points between 50 and 100
+
+    // Create a text object at the enemy's position
+    let hitText = this.add.text(enemy.x, enemy.y, hitPoints.toString(), {
+         fontSize: '20px',
+        fill: '#ffffff',  // White text
+        stroke: '#000000', // Black stroke
+        strokeThickness: 3, // Stroke thickness in pixels
+        align: 'center'  // Center align text
+    }).setOrigin(0.5, 0.5);
+
+    // Make the text disappear after 1 second
+    this.time.delayedCall(1000, () => {
+        hitText.destroy();
+    });
+////////////////////////////////////////////////////////////////
 		 
 		//console.log('item hit')
 		enemy.destroy()
