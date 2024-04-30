@@ -40,6 +40,20 @@ export default class VampScene extends Phaser.Scene {
 
     create() {
 
+	      this.load.image('redParticle', 'assets/circle.png');
+
+    // After loading complete and in the create method
+    this.particles = this.add.particles('redParticle');
+
+    // Create an emitter that is turned off by default
+    this.emitter = this.particles.createEmitter({
+        speed: 100,
+        scale: { start: 1, end: 0 },
+        blendMode: 'ADD',
+        lifespan: 600,
+        on: false // Ensure it does not emit immediately
+    });
+
 
 	    // Create level-up bar background
     this.levelUpBarBackground = this.add.graphics();
@@ -306,7 +320,14 @@ this.player2.displayWidth = 50;
         strokeThickness: 6, // Stroke thickness in pixels
         align: 'center'  // Center align text
     }).setOrigin(0.5, 0.5);
+ // Position the emitter at the enemy's location
+    this.emitter.setPosition(enemy.x, enemy.y);
+    this.emitter.start(); // Start emitting particles
 
+    // Stop emitting after a short burst
+    this.time.delayedCall(200, () => {
+        this.emitter.stop();
+    }, [], this);
     // Make the text disappear after 1 second
     this.time.delayedCall(1000, () => {
         hitText.destroy();
