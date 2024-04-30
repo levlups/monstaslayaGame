@@ -540,6 +540,8 @@ player.body.setVelocityX(0);
 		 
 		//console.log('item hit')
 		enemy.destroy()
+               this.gainExperience(hitPoints)
+		 
 		if(item.name=='circle'){
 		 this.gainExperience(0.1)
 		}
