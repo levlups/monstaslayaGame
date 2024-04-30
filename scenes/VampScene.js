@@ -27,6 +27,7 @@ export default class VampScene extends Phaser.Scene {
     preload() {
         // Load images/sprites
         this.load.image('background', 'assets/background.jpg');
+		 this.load.image('circle', 'assets/circle.png');
         this.load.spritesheet('player', 'assets/hero.png', { frameWidth: 180, frameHeight: 198 });
 		 this.load.spritesheet('enemy', 'assets/enemy.png', { frameWidth: 32, frameHeight: 32 });
 		 
@@ -99,9 +100,19 @@ export default class VampScene extends Phaser.Scene {
 	       this.uiContainer.add(this.timeText);
 
         // Each second call the countdown function
-        this.timedEvent = this.time.addEvent({
+        this.timedEventWaves = this.time.addEvent({
             delay: 1000,
             callback: this.onCountdown,
+            callbackScope: this,
+            loop: true
+        });
+		
+		
+		
+		 // Each second call the countdown function
+        this.timedEvent = this.time.addEvent({
+            delay: 1000,
+            callback: this.onWaves,
             callbackScope: this,
             loop: true
         });
@@ -125,6 +136,7 @@ export default class VampScene extends Phaser.Scene {
 this.hammer.displayHeight=32;
   this.hammer.displayWidth=32;
   this.hammer.setDepth(3);
+  this.hammer.name='hammer'
   
   
 
@@ -152,11 +164,18 @@ this.hammer.displayHeight=32;
         back.displayWidth = 800;
         back.displayHeight = 600;
 
+
+
+
+  
         // Create player
         this.player = this.physics.add.sprite(400, 300, 'player');
 this.player.displayWidth = 50;
         this.player.displayHeight = 50;
-		
+		 this.circle = this.physics.add.sprite(400, 300, 'circle').setDepth(5).setCircle(300).setOrigin(0.5, 0.5);
+		 this.circle.displayWidth = 200;
+        this.circle.displayHeight = 200;
+		this.circle.name='circle'
 		
 		  this.targetX = this.player.x; // Set initial target to player's starting position
         this.targetY = this.player.y; // Set initial target to player's starting position
@@ -238,6 +257,8 @@ this.player2.displayWidth = 50;
         this.physics.add.collider(this.player, this.enemies, this.handleCollision, null, this);
 		
 		this.physics.add.collider(this.hammer, this.enemies, this.handleCollisionItem, null, this);
+		
+			this.physics.add.collider(this.circle, this.enemies, this.handleCollisionItem, null, this);
 
         // Set up player animations and controls here
     }
@@ -307,7 +328,10 @@ this.player2.displayWidth = 50;
 	
 
     update() {
-
+		if(this.circle){
+this.circle.x=this.player.x
+this.circle.y=this.player.y
+		}
 	     // Update the container position to stay at the top left of the camera view
     this.uiContainer.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
 		 this.updateHealthBar()
@@ -472,9 +496,19 @@ player.body.setVelocityX(0);
 
 	
 	 handleCollisionItem(item, enemy) {
+		// console.log(item.name)
+		 
+		 
 		//console.log('item hit')
 		enemy.destroy()
-		 this.gainExperience(1)
+		if(item.name=='circle'){
+		 this.gainExperience(0.1)
+		}
+		else if(item.name=='hammer'){
+			 this.gainExperience(1)
+		}else{
+			return;
+		}
         // Handle what happens when a player hits an enemy
     }
 	 
@@ -496,6 +530,25 @@ player.body.setVelocityX(0);
         //this.healthBar.fillRect(this.player.x, this.player.y +42, this.playerHealth, 24);
 		
     }
+	
+	onWaves(){
+		//console.log('waves')
+		 // Add enemies to the group
+        for (let i = 0; i < 20; i++) {
+            let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(10, 50), 'enemy');
+			  enemy.anims.play('walky', true);
+            // Set up enemy behavior here
+        }
+
+        // Enable collision between player and enemies
+        this.physics.add.collider(this.player, this.enemies, this.handleCollision, null, this);
+		
+		this.physics.add.collider(this.hammer, this.enemies, this.handleCollisionItem, null, this);
+		
+			this.physics.add.collider(this.circle, this.enemies, this.handleCollisionItem, null, this);
+		
+		
+	}
 	
 	 onCountdown() {
         this.initialTime -= 1; // Decrease the timer by one
