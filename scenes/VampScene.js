@@ -41,7 +41,7 @@ export default class VampScene extends Phaser.Scene {
     }
 
     create() {
-
+ 
 	      
 
     // After loading complete and in the create method
@@ -507,6 +507,7 @@ player.body.setVelocityX(0);
 		//console.log('hit')
         // Handle what happens when a player hits an enemy
 		    if (!this.hitCooldown) {
+				this.cameras.main.shake(250, 0.01);
             this.playerHealth -= 10; // Decrease health by 10 or whatever amount is suitable
             this.updateHealthBar();
 
