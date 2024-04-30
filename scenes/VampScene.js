@@ -295,7 +295,7 @@ this.player2.displayWidth = 50;
 
 				/////////////////////////////////////////////////////////////
 				 // Calculate a random number to display
-    const hitPoints = Phaser.Math.Between(50, 100); // Random points between 50 and 100
+    const hitPoints = Phaser.Math.Between(5, 30); // Random points between 50 and 100
 
     // Create a text object at the enemy's position
     let hitText = this.add.text(enemy.x, enemy.y, hitPoints.toString(), {
@@ -520,7 +520,7 @@ player.body.setVelocityX(0);
 		// console.log(item.name)
 		 				/////////////////////////////////////////////////////////////
 				 // Calculate a random number to display
-    const hitPoints = Phaser.Math.Between(50, 100); // Random points between 50 and 100
+    const hitPoints = Phaser.Math.Between(5, 30); // Random points between 50 and 100
 
     // Create a text object at the enemy's position
     let hitText = this.add.text(enemy.x, enemy.y, hitPoints.toString(), {
