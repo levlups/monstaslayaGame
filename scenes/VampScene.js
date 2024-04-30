@@ -298,6 +298,7 @@ this.player2.displayWidth = 50;
 
     // Create a text object at the enemy's position
     let hitText = this.add.text(enemy.x, enemy.y, hitPoints.toString(), {
+	     fontFamily: 'Press Start 2P',
          fontSize: '20px',
         fill: '#ffffff',  // White text
         stroke: '#000000', // Black stroke
