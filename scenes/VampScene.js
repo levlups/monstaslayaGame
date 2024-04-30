@@ -19,7 +19,7 @@ export default class VampScene extends Phaser.Scene {
 		 this.targetX = 0; 
         this.targetY = 0;
 	    this.playerExperience=0;
-	    this.experienceToLevelUp=100;
+	    this.experienceToLevelUp=1000;
     }
 
 
