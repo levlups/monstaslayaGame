@@ -275,7 +275,10 @@ player.body.setVelocityX(0);
     });
 }
 }
-
+ WebFont.load({
+        google: {
+            families: ['Press Start 2P']
+        }
 const config = {
   type: Phaser.AUTO,
   width: 800,
