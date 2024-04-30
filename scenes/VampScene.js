@@ -36,11 +36,13 @@ export default class VampScene extends Phaser.Scene {
 		   this.load.image('whip', 'assets/whip.png'); 
 		   this.load.image('heart', 'assets/heart.png'); 
         // Add more assets as needed
+
+	    this.load.image('redParticle', 'assets/heart.png');
     }
 
     create() {
 
-	      this.load.image('redParticle', 'assets/heart.png');
+	      
 
     // After loading complete and in the create method
     this.particles = this.add.particles('redParticle');
