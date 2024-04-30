@@ -697,6 +697,8 @@ player.body.setVelocityX(0);
 }
 
     resetGame() {
+
+	     this.playerExperience=0;
 		//button.setVisible(true); 
 		this.playerHealth=100;
 		this.updateHealthBar();
