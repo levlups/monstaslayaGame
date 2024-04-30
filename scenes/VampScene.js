@@ -80,6 +80,7 @@ export default class VampScene extends Phaser.Scene {
 		
 		 // Create level text display
         this.levelText = this.add.text(0, 30, 'Level: ' + this.currentLevel, {
+		 
             fontSize: '32px',
             fill: '#FFFFFF'
         }).setDepth(8); // Anchored top right
@@ -302,7 +303,7 @@ this.player2.displayWidth = 50;
          fontSize: '20px',
         fill: '#ffffff',  // White text
         stroke: '#000000', // Black stroke
-        strokeThickness: 3, // Stroke thickness in pixels
+        strokeThickness: 6, // Stroke thickness in pixels
         align: 'center'  // Center align text
     }).setOrigin(0.5, 0.5);
 
@@ -523,10 +524,11 @@ player.body.setVelocityX(0);
 
     // Create a text object at the enemy's position
     let hitText = this.add.text(enemy.x, enemy.y, hitPoints.toString(), {
+	     fontFamily: 'Press Start 2P',
          fontSize: '20px',
         fill: '#ffffff',  // White text
         stroke: '#000000', // Black stroke
-        strokeThickness: 3, // Stroke thickness in pixels
+        strokeThickness: 6, // Stroke thickness in pixels
         align: 'center'  // Center align text
     }).setOrigin(0.5, 0.5);
 
