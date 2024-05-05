@@ -20,11 +20,14 @@ export default class VampScene extends Phaser.Scene {
         this.targetY = 0;
 	    this.playerExperience=0;
 	    this.experienceToLevelUp=1000;
+		 this.heartCount = 0;
     }
 
 
 
     preload() {
+		
+		 
         // Load images/sprites
         this.load.image('background', 'assets/background.jpg');
 		 this.load.image('circle', 'assets/circle.png');
@@ -42,7 +45,12 @@ export default class VampScene extends Phaser.Scene {
 
     create() {
  
-	      
+	      // Set up the UI for hearts
+        this.heartIcon = this.add.image(200, this.cameras.main.height - 750, 'heart').setVisible(false).setDepth(4);
+        this.heartText = this.add.text(220, this.cameras.main.height - 750, 'x0', {
+            fontSize: '20px',
+            fill: '#ffffff'
+        }).setVisible(false).setDepth(4);
 
     // After loading complete and in the create method
     this.particles = this.add.particles('redParticle');
@@ -55,6 +63,15 @@ export default class VampScene extends Phaser.Scene {
         lifespan: 600,
         on: false // Ensure it does not emit immediately
     });
+	
+	 
+        this.trailEmitter = this.particles.createEmitter({
+            speed: 100,
+            scale: { start: 0.5, end: 0 },
+            blendMode: 'ADD',
+            lifespan: 200,
+            on: false
+        });
 
 
 	    // Create level-up bar background
@@ -115,6 +132,8 @@ export default class VampScene extends Phaser.Scene {
         }).setDepth(4);
 
 	       this.uiContainer.add(this.timeText);
+		    this.uiContainer.add(this.heartIcon);
+			 this.uiContainer.add(this.heartText);
 
         // Each second call the countdown function
         this.timedEventWaves = this.time.addEvent({
@@ -137,7 +156,12 @@ export default class VampScene extends Phaser.Scene {
 		
 		
 		
-		
+		  this.time.addEvent({
+            delay: 2000,
+            callback: this.throwArrow,
+            callbackScope: this,
+            loop: true
+        });
 		
 		
 		
@@ -154,6 +178,7 @@ this.hammer.displayHeight=32;
   this.hammer.displayWidth=32;
   this.hammer.setDepth(3);
   this.hammer.name='hammer'
+  
   
   
 
@@ -236,6 +261,7 @@ this.player2.displayWidth = 50;
 		
         // Create enemies group
         this.enemies = this.physics.add.group();
+		  this.projectile = this.physics.add.group();
 		 // idle with only one frame, so repeat is not neaded
 		  this.anims.create({
           key: 'walk',
@@ -264,7 +290,7 @@ this.player2.displayWidth = 50;
 	
 
         // Add enemies to the group
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < (1* this.currentLevel+1); i++) {
             let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(10, 50), 'enemy');
 			  enemy.anims.play('walky', true);
             // Set up enemy behavior here
@@ -285,7 +311,23 @@ this.player2.displayWidth = 50;
     this.whipAttached = true; // Set a flag that the whip is attached
     whip.setVelocity(0, 0); // Stop the whip's movement
 }
-	
+  throwArrow() {
+        let arrow = this.projectile.create(100, 300, 'hammer');
+        arrow.setVelocityX(200);
+		
+		this.trailEmitter.start();
+       //this.trailEmitter.startFollow(arrow);
+	    this.trailEmitter.setPosition(arrow.x, arrow.y);
+       arrow.displayHeight=32;
+	    arrow.displayWidth=32;
+   arrow.waveAmplitude = 10;
+         arrow.waveFrequency = 0.05;
+         arrow.update = () => {
+			 this.trailEmitter.startFollow(arrow);
+			
+           /* arrow.y += Math.sin( arrow.x *  arrow.waveFrequency) *  arrow.waveAmplitude;*/
+        };
+    }	
 	   shootHammer() {
         if (!this.enemies || this.enemies.getChildren().length === 0) {
             return; // No enemies to shoot at
@@ -353,7 +395,25 @@ this.player2.displayWidth = 50;
         heart.destroy();
         this.playerHealth = Math.min(this.playerHealth + 10, this.playerMaxHealth);
         this.updateHealthBar();
+		   this.heartCount++;
+        this.updateHeartUI();
     }
+	
+	updateHeartUI() {
+        if (this.heartCount > 0) {
+            this.heartIcon.setVisible(true);
+            this.heartText.setText('x' + this.heartCount).setVisible(true);
+        } else {
+            this.heartIcon.setVisible(false);
+            this.heartText.setVisible(false);
+		}
+	}
+	
+	
+	
+	
+	
+	
 	findClosestEnemy() {
     let closestEnemy = null;
     let closestDistance = Infinity;
@@ -371,7 +431,19 @@ this.player2.displayWidth = 50;
 
 	
 
-    update() {
+    update(time , delta) {
+		
+		 
+		
+		  this.projectile.getChildren().forEach(arrow => {
+            arrow.update();
+			 /*let speed = 0.02; // Speed of rotation
+    let radius = 100; // Radius of the circle
+   arrow.x = 400 + Math.cos(time * speed) * radius;
+    arrow.y = 300 + Math.sin(time * speed) * radius;*/
+        });
+		
+		
 		if(this.circle){
 this.circle.x=this.player.x
 this.circle.y=this.player.y
@@ -421,7 +493,7 @@ this.circle.y=this.player.y
             var angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
             
             // Calculate velocity vector based on angle and enemy speed
-            const speed = 100; // Adjust speed as needed
+            const speed = 1* this.currentLevel+10; // Adjust speed as needed
             enemy.body.velocity.x = Math.cos(angle) * speed;
             enemy.body.velocity.y = Math.sin(angle) * speed;
         });
@@ -599,7 +671,7 @@ player.body.setVelocityX(0);
 	onWaves(){
 		//console.log('waves')
 		 // Add enemies to the group
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < this.currentLevel+2; i++) {
             let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(10, 50), 'enemy');
 			  enemy.anims.play('walky', true);
             // Set up enemy behavior here
@@ -749,7 +821,7 @@ player.body.setVelocityX(0);
         repeat: -1
     });
 		// Add enemies to the group
-        for (let i = 0; i < 20; i++) {
+        for (let i = 0; i < (1*this.currentLevel); i++) {
             let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(100, 500), 'enemy');
 			  enemy.anims.play('walky'+this.currentLevel, true);
             // Set up enemy behavior here
