@@ -71,7 +71,7 @@ texto2.setStroke('#000000',5)
    
 
 	    
-    }
+    
 
 	flickerCamera(duration, minAlpha, maxAlpha, rate) {
     let elapsed = 0;
