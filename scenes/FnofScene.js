@@ -46,6 +46,7 @@ texto2.setStroke('#000000',5)
 			 button2.on('pointerdown', () => {
       //console.log("Button clicked");
 	  this.scene.start('FnofScene');
+				 console.log("lol");
   });
 
 
