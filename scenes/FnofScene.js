@@ -58,10 +58,10 @@ texto2.setStroke('#000000',5)
 	
    // Schedule the camera flickering every 5 seconds
         this.time.addEvent({
-            delay: 5000,
+            delay: 10000,
             callback: () => {
                 this.flickerCamera(5000, 0.5, 1, 50);
-                this.time.delayedCall(200, () => {
+                this.time.delayedCall(2000, () => {
                     this.cameras.main.alpha = 1;
                 });
             },
