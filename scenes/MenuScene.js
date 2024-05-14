@@ -15,7 +15,7 @@ export default class MenuScene extends Phaser.Scene {
 		
 		//poster.displayHeight = 600;
    // poster.displayWidth = 800;
-     const texto=   this.add.text(400, 400, 'Farmer by day Monsta Slaya by night', {  fill: '#ffffff' })
+     const texto=   this.add.text(400, 400, 'Fnof', {  fill: '#ffffff' })
             .setOrigin(0.5, 0.5).setDepth(2).setStyle({
     fontSize: '32px',
     fontFamily: 'Arial',
