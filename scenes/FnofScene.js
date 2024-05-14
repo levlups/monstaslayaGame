@@ -1,6 +1,7 @@
 export default class Fnofcene extends Phaser.Scene {
     constructor() {
         super({ key: 'FnofScene' });
+	         this.camMove = { amplitude: 100, frequency: 0.005, time: 0 };
     }
 
 
@@ -41,27 +42,28 @@ texto2.setStroke('#000000',5)
       //console.log("Button clicked");
 	  this.scene.start('FnofScene');
   });
-			
-			  // Optionally set up objects to focus on during the pan
-        this.startingPoint = { x: 100, y: 540 }; // Starting focus point of the camera
-        this.endingPoint = { x: 1820, y: 540 }; // Ending focus point of the camera
-			/* this.time.delayedCall(5000, () => {
-            //this.scene.start('MainScene');
-        });*/
-     // Define the camera's world bounds
-    
 
-    this.time.delayedCall(1000, () => {
-        this.cameras.main.pan(this.endingPoint.x, this.endingPoint.y, 3000, 'Sine.easeInOut', false, (cam, progress) => {
-            if (progress === 1) {
-                console.log('Pan complete!');
-            }
-        });
-    }, [], this);
+
+	     this.cameras.main.setBounds(0, 0, 1920, 1080);
+        this.cameras.main.setScroll(960, 540);
+			
+	
 
 
 	    
     }
+
+	update(time, delta){
+	
+
+	   this.camMove.time += delta;
+        let newX = 960 + this.camMove.amplitude * Math.sin(this.camMove.frequency * this.camMove.time);
+        this.cameras.main.setScroll(newX, 540);
+
+			    
+    }
+
+
 
 	
 
