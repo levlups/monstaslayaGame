@@ -42,7 +42,9 @@ texto2.setStroke('#000000',5)
 	  this.scene.start('FnofScene');
   });
 			
-			
+			  // Optionally set up objects to focus on during the pan
+        this.startingPoint = { x: 100, y: 540 }; // Starting focus point of the camera
+        this.endingPoint = { x: 1820, y: 540 }; // Ending focus point of the camera
 			/* this.time.delayedCall(5000, () => {
             //this.scene.start('MainScene');
         });*/
