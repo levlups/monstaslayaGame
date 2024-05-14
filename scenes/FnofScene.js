@@ -93,6 +93,7 @@ texto2.setStroke('#000000',5)
         loop: true
     });
 }
+}
 
 	update(time, delta){
 	
