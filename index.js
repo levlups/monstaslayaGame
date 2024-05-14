@@ -9,7 +9,7 @@
 import EmptyScene from './scenes/EmptyScene.js';
 import VampScene from './scenes/VampScene.js';
 import MenuScene from './scenes/MenuScene.js';
-
+import FnofScene from './scenes/FnofScene.js';
 
 
 let controls;
@@ -293,7 +293,7 @@ const config = {
       gravity: { y: 0 },
     },
   },
- scene: [MenuScene,VampScene,EmptyScene,MainScene]
+ scene: [MenuScene,VampScene,EmptyScene,MainScene,FnofScene]
 };
 
 const game = new Phaser.Game(config);
