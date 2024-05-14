@@ -46,7 +46,32 @@ texto2.setStroke('#000000',5)
 			/* this.time.delayedCall(5000, () => {
             //this.scene.start('MainScene');
         });*/
+     // Define the camera's world bounds
+        this.physics.world.setBounds(0, 0, 1920, 1080); // Adjust dimensions to match your game's requirements
+
+        // Optionally set up objects to focus on during the pan
+        this.startingPoint = { x: 100, y: 540 }; // Starting focus point of the camera
+        this.endingPoint = { x: 1820, y: 540 }; // Ending focus point of the camera
+
+        // Start the camera at a specific point
+        this.cameras.main.setScroll(this.startingPoint.x, this.startingPoint.y);
+
+        // Start a camera pan using the pan method after a delay or an event
+        this.time.delayedCall(1000, this.startCameraPan, [], this);
+
+
+	    
     }
+
+	   startCameraPan() {
+        // Pan the camera to the ending point over 3000 milliseconds
+        this.cameras.main.pan(this.endingPoint.x, this.endingPoint.y, 3000, 'Power2.easeInOut', false, function(camera, progress) {
+            if (progress === 1) {
+                console.log('Pan complete!'); // Optional: do something when the pan completes
+            }
+        });
+    }
+
 }
 
 
