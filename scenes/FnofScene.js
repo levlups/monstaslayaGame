@@ -1,6 +1,6 @@
 export default class Fnofcene extends Phaser.Scene {
     constructor() {
-        super({ key: 'Fnof' });
+        super({ key: 'FnofScene' });
     }
 
 
