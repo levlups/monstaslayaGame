@@ -61,7 +61,7 @@ texto2.setStroke('#000000',5)
             delay: 5000,
             callback: () => {
                 this.flickerCamera(5000, 0.5, 1, 50);
-                this.time.delayedCall(100, () => {
+                this.time.delayedCall(200, () => {
                     this.cameras.main.alpha = 1;
                 });
             },
