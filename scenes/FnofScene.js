@@ -11,8 +11,7 @@ export default class Fnofcene extends Phaser.Scene {
 	}
     create() {
 
-	        // Setup your game scene, then trigger the flicker effect
-    this.flickerCamera(5000, 0.5, 1, 50); // Flicker for 5000ms between 50% and 100% opacity every 50ms
+	  
 
 
 		//this.load.image("pepe", "pepe.png");
