@@ -62,7 +62,7 @@ texto2.setStroke('#000000',5)
 	   this.camMove.time += delta;
         //let newX = 960 + this.camMove.amplitude * Math.sin(this.camMove.frequency * this.camMove.time);
 		 let newX = 0 + this.camMove.amplitude * Math.sin(this.camMove.frequency * this.camMove.time);
-        this.cameras.main.setScroll(newX, 540);
+        this.cameras.main.setScroll(newX, 0);
 
 			    
     }
