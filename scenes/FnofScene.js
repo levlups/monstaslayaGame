@@ -66,6 +66,10 @@ texto2.setStroke('#000000',5)
             },
             loop: true
         });
+
+	      flickerCamera(minAlpha, maxAlpha, rate) {
+        this.cameras.main.alpha = Phaser.Math.Between(minAlpha * 100, maxAlpha * 100) / 100;
+    }
     }
 
    
@@ -73,7 +77,7 @@ texto2.setStroke('#000000',5)
 	    
     
 
-	flickerCamera(duration, minAlpha, maxAlpha, rate) {
+	/*flickerCamera(duration, minAlpha, maxAlpha, rate) {
     let elapsed = 0;
     const interval = 100; // Time in ms between flickers
     let flickering = this.time.addEvent({
@@ -89,7 +93,7 @@ texto2.setStroke('#000000',5)
         callbackScope: this,
         loop: true
     });
-}
+}*/
 
 
 	update(time, delta){
