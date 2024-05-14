@@ -56,7 +56,22 @@ texto2.setStroke('#000000',5)
         this.cameras.main.setScroll(960, 540);
 			
 	
+   // Schedule the camera flickering every 5 seconds
+        this.time.addEvent({
+            delay: 5000,
+            callback: () => {
+                this.flickerCamera(0.5, 1, 50);
+                this.time.delayedCall(50, () => {
+                    this.cameras.main.alpha = 1;
+                });
+            },
+            loop: true
+        });
+    }
 
+    flickerCamera(minAlpha, maxAlpha, rate) {
+        this.cameras.main.alpha = Phaser.Math.Between(minAlpha * 100, maxAlpha * 100) / 100;
+    }
 
 	    
     }
