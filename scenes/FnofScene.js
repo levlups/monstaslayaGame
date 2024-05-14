@@ -67,9 +67,11 @@ texto2.setStroke('#000000',5)
             loop: true
         });
 
-	      flickerCamera(minAlpha, maxAlpha, rate) {
-        this.cameras.main.alpha = Phaser.Math.Between(minAlpha * 100, maxAlpha * 100) / 100;
+
     }
+
+		      flickerCamera(minAlpha, maxAlpha, rate) {
+        this.cameras.main.alpha = Phaser.Math.Between(minAlpha * 100, maxAlpha * 100) / 100;
     }
 
    
