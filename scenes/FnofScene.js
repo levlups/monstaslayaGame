@@ -11,7 +11,8 @@ export default class Fnofcene extends Phaser.Scene {
 	}
     create() {
 
-	  
+	     // Trigger the flickering effect
+       // this.flickerCamera(5000, 0.5, 1, 50); // Flicker for 5 seconds
 
 
 		//this.load.image("pepe", "pepe.png");
@@ -59,7 +60,7 @@ texto2.setStroke('#000000',5)
         this.time.addEvent({
             delay: 5000,
             callback: () => {
-                this.flickerCamera(0.5, 1, 50);
+                this.flickerCamera(5000, 0.5, 1, 50);
                 this.time.delayedCall(50, () => {
                     this.cameras.main.alpha = 1;
                 });
@@ -70,13 +71,29 @@ texto2.setStroke('#000000',5)
 
     }
 
-		      flickerCamera(minAlpha, maxAlpha, rate) {
+		     /* flickerCamera(minAlpha, maxAlpha, rate) {
         this.cameras.main.alpha = Phaser.Math.Between(minAlpha * 100, maxAlpha * 100) / 100;
-    }
+    }*/
 
    
 
-	    
+	     flickerCamera(duration, minAlpha, maxAlpha, rate) {
+        let elapsed = 0;
+        const interval = 100; // Time in ms between flickers
+        let flickering = this.time.addEvent({
+            delay: rate,
+            callback: () => {
+                this.cameras.main.alpha = Phaser.Math.Between(minAlpha * 100, maxAlpha * 100) / 100;
+                elapsed += rate;
+                if (elapsed >= duration) {
+                    flickering.remove();
+                    this.cameras.main.alpha = 1; // Reset to normal
+                }
+            },
+            callbackScope: this,
+            loop: true
+        });
+    }
     
 
 	/*flickerCamera(duration, minAlpha, maxAlpha, rate) {
