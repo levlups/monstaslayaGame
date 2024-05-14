@@ -10,6 +10,11 @@ export default class Fnofcene extends Phaser.Scene {
 		this.load.spritesheet("buttons", "UIpack_vector.svg",{ frameWidth: 230, frameHeight: 65 });
 	}
     create() {
+
+	        // Setup your game scene, then trigger the flicker effect
+    this.flickerCamera(5000, 0.5, 1, 50); // Flicker for 5000ms between 50% and 100% opacity every 50ms
+
+
 		//this.load.image("pepe", "pepe.png");
 		//this.add.sprite(0, 0, 'pepe');
 		const poster=this.add.sprite(400,400,"pepe").setOrigin(0.5)
@@ -55,6 +60,24 @@ texto2.setStroke('#000000',5)
 
 	    
     }
+
+	flickerCamera(duration, minAlpha, maxAlpha, rate) {
+    let elapsed = 0;
+    const interval = 100; // Time in ms between flickers
+    let flickering = this.time.addEvent({
+        delay: rate,
+        callback: () => {
+            this.cameras.main.alpha = Phaser.Math.Between(minAlpha * 100, maxAlpha * 100) / 100;
+            elapsed += rate;
+            if (elapsed >= duration) {
+                flickering.remove();
+                this.cameras.main.alpha = 1; // Reset camera alpha to normal after flickering ends
+            }
+        },
+        callbackScope: this,
+        loop: true
+    });
+}
 
 	update(time, delta){
 	
