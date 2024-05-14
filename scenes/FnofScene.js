@@ -44,8 +44,11 @@ texto2.setStroke('#000000',5)
   });
 
 
-	     this.cameras.main.setBounds(0, 0, 800, 600);
-        this.cameras.main.setScroll(400, 300);
+	     //this.cameras.main.setBounds(0, 0, 800, 600);
+       // this.cameras.main.setScroll(400, 300);
+
+	     this.cameras.main.setBounds(0, 0, 1920, 1080);
+        this.cameras.main.setScroll(960, 540);
 			
 	
 
