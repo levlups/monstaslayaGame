@@ -1,7 +1,7 @@
 export default class Fnofcene extends Phaser.Scene {
     constructor() {
         super({ key: 'FnofScene' });
-	         this.camMove = { amplitude: 10, frequency: 0.005, time: 0 };
+	         this.camMove = { amplitude: 100, frequency: 0.005, time: 0 };
     }
 
 
