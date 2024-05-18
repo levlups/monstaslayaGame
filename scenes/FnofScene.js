@@ -37,7 +37,7 @@ export default class Fnofcene extends Phaser.Scene {
 		//this.add.sprite(0, 0, 'pepe');
 		const poster=this.add.sprite(400,400,"pepe").setOrigin(0.5)
 		
-		const flashy=this.add.sprite(400,400,"flash").setOrigin(0.5)
+		this.flashy=this.add.sprite(400,400,"flash").setOrigin(0.5)
 		
 		this.time.delayedCall(5000, function() {
                  var gif = this.add.sprite(400, 300, 'scare');
@@ -149,12 +149,32 @@ texto2.setStroke('#000000',5)
 	update(time, delta){
 	
 
-	   this.camMove.time += delta;
+	 /*  this.camMove.time += delta;
         //let newX = 960 + this.camMove.amplitude * Math.sin(this.camMove.frequency * this.camMove.time);
 		 let newX = 200 + this.camMove.amplitude * Math.sin(this.camMove.frequency * this.camMove.time);
-        this.cameras.main.setScroll(newX, 0);
-
+        this.cameras.main.setScroll(newX, 0);*/
+this.followMouseWithCamera();
 			    
+    }
+	
+	  followMouseWithCamera() {
+		  
+        // Get the mouse pointer position
+        const pointer = this.input.activePointer;
+
+        // Calculate the desired camera position
+        let targetX = pointer.worldX - this.cameras.main.width / 2;
+        let targetY = pointer.worldY - this.cameras.main.height / 2;
+
+        // Clamp the target position to the world bounds
+      //  targetX = Phaser.Math.Clamp(targetX, 0, this.cameras.main.worldView.width - this.cameras.main.width);
+     //   targetY = Phaser.Math.Clamp(targetY, 0, this.cameras.main.worldView.height - this.cameras.main.height);
+
+        // Smoothly move the camera towards the target position
+        this.cameras.main.scrollX = Phaser.Math.Linear(this.cameras.main.scrollX, targetX, 0.1);
+        this.cameras.main.scrollY = Phaser.Math.Linear(this.cameras.main.scrollY, targetY, 0.1);
+		this.flashy.x=this.cameras.main.scrollX+400;
+		this.flashy.y=this.cameras.main.scrollY+400;
     }
 
 
