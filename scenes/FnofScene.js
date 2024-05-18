@@ -75,7 +75,7 @@ texto2.setStroke('#000000',5)
         const button2 = this.add.sprite(400, 450, 'buttons', 'button-bg', 128, 110, 64, 64).setInteractive();
 			 button2.on('pointerdown', () => {
       //console.log("Button clicked");
-	  this.scene.start('FnofScene');
+	  this.scene.start('FnofStart');
 				 console.log("lol");
   });
 
