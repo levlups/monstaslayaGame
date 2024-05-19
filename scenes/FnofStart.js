@@ -50,6 +50,24 @@ this.cursors = this.input.keyboard.createCursorKeys();
     align: 'center'
     
 });;
+
+ this.signo1=   this.add.text(40, 40, 'Five nights', {  fill: '#ffffff' })
+            .setOrigin(0.5, 0.5).setDepth(2).setStyle({
+    fontSize: '32px',
+    fontFamily: 'Arial',
+    color: '#ffffff',
+    align: 'center'
+    
+});;
+
+ this.signo2=   this.add.text(40, 80, 'at Freddys', {  fill: '#ffffff' })
+            .setOrigin(0.5, 0.5).setDepth(2).setStyle({
+    fontSize: '32px',
+    fontFamily: 'Arial',
+    color: '#ffffff',
+    align: 'center'
+    
+});;
 		
 		this.time.delayedCall(5000, function() {
                  var gif = this.add.sprite(400, 300, 'scare');
@@ -122,8 +140,9 @@ texto2.setStroke('#000000',5)
 	  // Check if the down arrow key is being pressed
     if (this.cursors.down.isDown) {
         this.signo.setAlpha(0.5);  // Set the sprite to be 50% transparent when the down arrow is pressed
-		this.signo.y+=100;
-    } else {
+		this.signo.y=100;
+    } 
+	if (this.cursors.down.isDown) {
         this.signo.setAlpha(1);  // Set the sprite to be fully opaque when the down arrow is not pressed
 		this.signo.y=400;
     }
