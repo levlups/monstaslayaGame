@@ -6,13 +6,7 @@
 
 
 
-import EmptyScene from './scenes/EmptyScene.js';
-import VampScene from './scenes/VampScene.js';
-import MenuScene from './scenes/MenuScene.js';
-import FnofScene from './scenes/FnofScene.js';
-import FnofStart from './scenes/FnofStart.js';
-import NewsScene from './scenes/NewsScene.js';
-import DungeonScene from './scenes/DungeonScene.js';
+
 
 
 let controls;
@@ -24,15 +18,25 @@ var lol;
 var coins;
 var coin;
 
-class MainScene extends Phaser.Scene {
+export default class DungeonScene extends Phaser.Scene {
     constructor() {
-        super({ key: 'MainScene' });
+        super({ key: 'DungeonScene' });
     }
 
  preload() {
 	
-  this.load.image("tiles", "tuxmon32.png");
-  this.load.tilemapTiledJSON("map", "tuxemon-town.json");
+ this.load.image("tiles", "DungeonTileset.png");
+ 
+ 
+ 
+ 
+  
+  //this.load.image("tiles1", "tuxmon32.png");
+  
+  
+ // this.load.tilemapTiledJSON("map", "tuxemon-town.json");
+  
+  this.load.tilemapTiledJSON("map", "dungeon-town.json");
     this.load.atlas('player', 'assets/player.png', 'assets/player.json');
 	
 	 this.load.image('coin', "assets/coinGold.png");
@@ -45,10 +49,7 @@ class MainScene extends Phaser.Scene {
  create() {
 	 
 	 
-	   // Timer to switch to the empty scene after 10 seconds
-        this.time.delayedCall(10000, () => {
-            this.scene.start('DungeonScene');
-        });
+	   
 	 
 	 
 	 
@@ -77,7 +78,7 @@ class MainScene extends Phaser.Scene {
 
   // Setting overlap for all coins in the group
   this.physics.add.overlap(player, coins, function(player, coin) {
-      console.log('lol'); // This function is called when the player overlaps with any coin
+      console.log('loluuuu'); // This function is called when the player overlaps with any coin
 	  //723, 314
 	  player.x=923;
 	  player.y=314;
@@ -99,7 +100,7 @@ class MainScene extends Phaser.Scene {
  //player.setCollideWorldBounds(true); // don't go out of the map   
   // Parameters are the name you gave the tileset in Tiled and then the key of the tileset image in
   // Phaser's cache (i.e. the name you used in preload)
-  const tileset = map.addTilesetImage("tuxmon-sample-32px-extruded", "tiles");
+  const tileset = map.addTilesetImage("DungeonTileset", "tiles");
 
   // Parameters: layer name (or index) from Tiled, tileset, x, y
   const belowLayer = map.createLayer("Below Player", tileset, 0, 0);
@@ -279,24 +280,3 @@ player.body.setVelocityX(0);
 }
 }
 
-const config = {
-  type: Phaser.AUTO,
-  width: 800,
-  height: 800,
-  parent: "game-container",
-  pixelArt: true,
-
-   dom: {
-        createContainer: true
-    },
-  physics: {
-    default: "arcade",
-    arcade: {
-		debug:false,
-      gravity: { y: 0 },
-    },
-  },
- scene: [DungeonScene,MainScene,FnofStart,MenuScene,VampScene,EmptyScene,FnofScene,NewsScene]
-};
-
-const game = new Phaser.Game(config);
