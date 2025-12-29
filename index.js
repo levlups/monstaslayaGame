@@ -47,7 +47,7 @@ class MainScene extends Phaser.Scene {
 	 
 	   // Timer to switch to the empty scene after 10 seconds
         this.time.delayedCall(10000, () => {
-            this.scene.start('DungeonScene');
+            this.scene.start('VampScene');
         });
 	 
 	 
