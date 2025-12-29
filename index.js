@@ -26,7 +26,7 @@ var coin;
 
 class MainScene extends Phaser.Scene {
     constructor() {
-        super({ key: 'MainScene' });
+        super({ key: 'VampScene' });
     }
 
  preload() {
