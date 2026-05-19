@@ -1,877 +1,797 @@
+const GAME_WIDTH = 800;
+const GAME_HEIGHT = 800;
+const WORLD_WIDTH = 1800;
+const WORLD_HEIGHT = 1400;
+
+const PLAYER_SPEED = 235;
+const ENEMY_BASE_SPEED = 58;
+const HAMMER_SPEED = 520;
+const WAVE_SECONDS = 30;
 
 let player;
 let cursors;
-let mainscene;
-var button;
- var p = location.hash;
-        console.log(p.substring(1));
-		console.log(p)
+
 export default class VampScene extends Phaser.Scene {
     constructor() {
         super({ key: 'VampScene' });
-		     this.playerMaxHealth = 100;
-        this.playerHealth = this.playerMaxHealth;
-		this.hitCooldown = false; // Flag to manage hit cooldown
-		 this.currentLevel = 0; // Initialize level counter
-		 this.gameEnded=false;
-		 this.endText;
-		 this.restartButton;
-		 this.targetX = 0; 
-        this.targetY = 0;
-	    this.playerExperience=0;
-	    this.experienceToLevelUp=1000;
-		 this.heartCount = 0;
     }
 
-
-
     preload() {
-		
-		 
-        // Load images/sprites
         this.load.image('background', 'assets/background.jpg');
-		 this.load.image('circle', 'assets/circle.png');
+        this.load.image('circle', 'assets/circle.png');
         this.load.spritesheet('player', 'assets/hero.png', { frameWidth: 180, frameHeight: 198 });
-		 this.load.spritesheet('enemy', 'assets/enemy.png', { frameWidth: 32, frameHeight: 32 });
-		 
-		 
-		  this.load.image('hammer', 'assets/hammer.png'); 
-		   this.load.image('whip', 'assets/whip.png'); 
-		   this.load.image('heart', 'assets/heart.png'); 
-        // Add more assets as needed
-
-	    this.load.image('redParticle', 'assets/heart.png');
+        this.load.spritesheet('enemy', 'assets/enemy.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.image('hammer', 'assets/hammer.png');
+        this.load.image('whip', 'assets/whip.png');
+        this.load.image('heart', 'assets/heart.png');
+        this.load.image('gem', 'assets/coinGold.png');
+        this.load.image('redParticle', 'assets/heart.png');
     }
 
     create() {
- 
-	      // Set up the UI for hearts
-        this.heartIcon = this.add.image(200, this.cameras.main.height - 750, 'heart').setVisible(false).setDepth(4);
-        this.heartText = this.add.text(220, this.cameras.main.height - 750, 'x0', {
-            fontSize: '20px',
-            fill: '#ffffff'
-        }).setVisible(false).setDepth(4);
+        this.resetRunState();
+        this.createWorld();
+        this.createPlayer();
+        this.createAnimations();
+        this.createWeapons();
+        this.createGroups();
+        this.createHud();
+        this.createControls();
+        this.createEffects();
+        this.createTimers();
+        this.spawnWave(true);
+    }
 
-    // After loading complete and in the create method
-    this.particles = this.add.particles('redParticle');
+    resetRunState() {
+        this.currentLevel = 1;
+        this.playerMaxHealth = 100;
+        this.playerHealth = this.playerMaxHealth;
+        this.playerExperience = 0;
+        this.experienceToLevelUp = 120;
+        this.heartCount = 0;
+        this.waveTimeLeft = WAVE_SECONDS;
+        this.hitCooldown = false;
+        this.gameEnded = false;
+        this.targetX = GAME_WIDTH / 2;
+        this.targetY = GAME_HEIGHT / 2;
+        this.whipAttached = false;
+        this.isChoosingUpgrade = false;
+        this.pendingUpgrades = 0;
+        this.damageBonus = 0;
+        this.attackDelay = 720;
+        this.moveSpeed = PLAYER_SPEED;
+        this.angle = 0;
+        this.radius = 82;
+        this.orbitSpeed = 0.055;
+    }
 
-    // Create an emitter that is turned off by default
-    this.emitter = this.particles.createEmitter({
-        speed: 100,
-        scale: { start: 1, end: 0 },
-        blendMode: 'ADD',
-        lifespan: 600,
-        on: false // Ensure it does not emit immediately
-    });
-	
-	 
-        this.trailEmitter = this.particles.createEmitter({
-            speed: 100,
-            scale: { start: 0.5, end: 0 },
+    createWorld() {
+        this.add.tileSprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, WORLD_WIDTH, WORLD_HEIGHT, 'background')
+            .setDepth(-10)
+            .setAlpha(0.9);
+
+        this.cameras.main.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+        this.physics.world.setBounds(0, 0, WORLD_WIDTH, WORLD_HEIGHT);
+    }
+
+    createPlayer() {
+        this.player = this.physics.add.sprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 'player');
+        this.player.setDisplaySize(54, 60);
+        this.player.setDepth(5);
+        this.player.setCollideWorldBounds(true);
+        this.player.body.setSize(90, 110).setOffset(45, 55);
+        player = this.player;
+
+        this.player2 = this.physics.add.sprite(WORLD_WIDTH / 2, WORLD_HEIGHT / 2, 'player');
+        this.player2.setDisplaySize(54, 60);
+        this.player2.setDepth(4);
+        this.player2.setAlpha(0.65);
+        this.player2.setTint(0x66ccff);
+
+        this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    }
+
+    createGroups() {
+        this.enemies = this.physics.add.group();
+        this.hammers = this.physics.add.group();
+        this.loots = this.physics.add.group();
+        this.gems = this.physics.add.group();
+        this.projectiles = this.physics.add.group();
+
+        this.physics.add.overlap(this.player, this.enemies, this.handlePlayerHit, null, this);
+        this.physics.add.overlap(this.hammers, this.enemies, this.handleHammerHit, null, this);
+        this.physics.add.overlap(this.orbitHammer, this.enemies, this.handleOrbitHit, null, this);
+        this.physics.add.overlap(this.projectiles, this.enemies, this.handleHammerHit, null, this);
+        this.physics.add.overlap(this.player, this.loots, this.collectHeart, null, this);
+        this.physics.add.overlap(this.player, this.gems, this.collectGem, null, this);
+    }
+
+    createAnimations() {
+        this.anims.create({
+            key: 'walk',
+            frames: this.anims.generateFrameNumbers('player', { frames: [0, 1, 2, 3, 4, 5] }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'idle',
+            frames: this.anims.generateFrameNumbers('player', { frames: [5] }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        for (let i = 0; i < 4; i++) {
+            this.anims.create({
+                key: `enemyWalk${i}`,
+                frames: this.anims.generateFrameNumbers('enemy', { frames: [i * 4, i * 4 + 1, i * 4 + 2, i * 4 + 3] }),
+                frameRate: 8,
+                repeat: -1
+            });
+        }
+
+        this.player.anims.play('idle', true);
+        this.player2.anims.play('idle', true);
+    }
+
+    createWeapons() {
+        this.orbitHammer = this.physics.add.sprite(this.player.x, this.player.y, 'hammer');
+        this.orbitHammer.setDisplaySize(36, 36);
+        this.orbitHammer.setDepth(6);
+        this.orbitHammer.name = 'orbitHammer';
+
+        this.circle = this.add.image(this.player.x, this.player.y, 'circle')
+            .setDisplaySize(210, 210)
+            .setAlpha(0.16)
+            .setDepth(1);
+    }
+
+    createHud() {
+        const hudStyle = {
+            fontFamily: 'Arial',
+            fontSize: '22px',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 5
+        };
+
+        this.levelText = this.add.text(18, 18, 'Wave 1', hudStyle).setScrollFactor(0).setDepth(100);
+        this.timeText = this.add.text(GAME_WIDTH - 18, 18, '00:30', hudStyle).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
+        this.scoreText = this.add.text(18, 48, 'XP 0 / 120', { ...hudStyle, fontSize: '18px' }).setScrollFactor(0).setDepth(100);
+        this.heartText = this.add.text(GAME_WIDTH - 18, 48, 'Hearts x0', { ...hudStyle, fontSize: '18px' }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
+
+        this.levelUpBarBackground = this.add.graphics().setScrollFactor(0).setDepth(99);
+        this.levelUpBarFill = this.add.graphics().setScrollFactor(0).setDepth(100);
+        this.healthBarBackground = this.add.graphics().setDepth(98);
+        this.healthBar = this.add.graphics().setDepth(99);
+
+        this.updateHud();
+        this.updateHealthBar();
+    }
+
+    createControls() {
+        cursors = this.input.keyboard.createCursorKeys();
+        this.keys = this.input.keyboard.addKeys('W,A,S,D');
+
+        this.input.on('pointerdown', (pointer) => {
+            this.targetX = pointer.worldX;
+            this.targetY = pointer.worldY;
+        });
+
+        this.input.keyboard.on('keydown-ESC', () => {
+            this.scene.start('MenuScene');
+        });
+    }
+
+    createEffects() {
+        this.particles = this.add.particles('redParticle');
+        this.hitEmitter = this.particles.createEmitter({
+            speed: { min: 60, max: 160 },
+            scale: { start: 0.45, end: 0 },
             blendMode: 'ADD',
-            lifespan: 200,
+            lifespan: 450,
             on: false
         });
+    }
 
+    createTimers() {
+        this.attackTimer = this.time.addEvent({
+            delay: this.attackDelay,
+            callback: this.shootHammer,
+            callbackScope: this,
+            loop: true
+        });
 
-	    // Create level-up bar background
-    this.levelUpBarBackground = this.add.graphics();
-    this.levelUpBarBackground.fillStyle(0x000000, 1); // black background
-    this.levelUpBarBackground.fillRect(0, this.cameras.main.height -790, this.cameras.main.width, 20);
-
-    // Create level-up bar fill
-    this.levelUpBarFill = this.add.graphics();
-    this.levelUpBarFill.fillStyle(0x00ff00, 1); // green fill
-    this.levelUpBarFill.fillRect(0,0, 0, 0); // initially empty
-
-    // Fix the level-up bar to the camera
-    this.levelUpBarBackground.setScrollFactor(0);
-    this.levelUpBarFill.setScrollFactor(0);
-///////////////////////////////////////////////////////////////////////////
-/* // Delay for 5 seconds before showing the video
-    this.time.delayedCall(5000, function() {
-        var videoHtml = '<iframe width="560" height="315" src="https://www.youtube.com/embed/lWLcqtf2fos?si=CdgFNmPac7L31syY" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; muted; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>';
-        var video = this.add.dom(400, 300).createFromHTML(videoHtml);
-        video.setOrigin(0.5); // This centers the iframe
-    }, [], this);*/
-	    
-		mainscene=this;
-		
-		
-		    // Start a repeating timer to shoot the hammer
-    this.time.addEvent({
-        delay: 1000,    // 1000 ms = 1 second
-        callback: this.shootHammer,
-        callbackScope: this,
-        loop: true
-    });
-		
-		  // Create a container for UI elements
-    this.uiContainer = this.add.container(this.cameras.main.worldView.x, this.cameras.main.worldView.y);
-//    this.uiContainer.setScrollFactor(0);
-		
-		
-		 // Create level text display
-        this.levelText = this.add.text(0, 30, 'Level: ' + this.currentLevel, {
-		 
-            fontSize: '32px',
-            fill: '#FFFFFF'
-        }).setDepth(8); // Anchored top right
-
-	     this.uiContainer.add(this.levelText);
-		
-		  // Start a 2-minute countdown timer
-       // this.initialTime = 120; // 2 minutes in seconds
-		
-		this.initialTime = 10; // 2 minutes in seconds
-
-        // Display timer text
-        this.timeText = this.add.text(this.cameras.main.width -220, 30, 'Time: ' + this.formatTime(this.initialTime), {
-            fontSize: '32px',
-            fill: '#FFFFFF'
-        }).setDepth(4);
-
-	       this.uiContainer.add(this.timeText);
-		    this.uiContainer.add(this.heartIcon);
-			 this.uiContainer.add(this.heartText);
-
-        // Each second call the countdown function
-        this.timedEventWaves = this.time.addEvent({
+        this.waveTimer = this.time.addEvent({
             delay: 1000,
-            callback: this.onCountdown,
+            callback: this.tickWave,
             callbackScope: this,
             loop: true
         });
-		
-		
-		
-		 // Each second call the countdown function
-        this.timedEvent = this.time.addEvent({
-            delay: 1000,
-            callback: this.onWaves,
+
+        this.spawnTimer = this.time.addEvent({
+            delay: 4200,
+            callback: () => this.spawnEnemies(Math.ceil(this.currentLevel / 2) + 1),
             callbackScope: this,
             loop: true
         });
-		
-		
-		
-		
-		  this.time.addEvent({
-            delay: 2000,
-            callback: this.throwArrow,
-            callbackScope: this,
-            loop: true
-        });
-		
-		
-		
-		
-		
-		
-		// this.hammer2 = this.physics.add.sprite(100, 100, 'hammer');
-		
-		
-		
-		
-		 this.hammer = this.physics.add.sprite(100, 100, 'hammer');
-this.hammer.displayHeight=32;
-  this.hammer.displayWidth=32;
-  this.hammer.setDepth(3);
-  this.hammer.name='hammer'
-  
-  
-  
+    }
 
-  
-  // Orbit parameters
-  this.radius = 100;
-  this.speed = 0.05;
-  this.angle = 0;
-		
-		this.spaceBar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-   cursors = this.input.keyboard.createCursorKeys();
-  
-   // Define W, A, S, D keys
-  this.WKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.W);
-  this.AKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.A);
-  this.SKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.S);
-  this.DKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.D);
-		
-		
-		
-        // Add background
-    const back=   this.add.image(400, 300, 'background')
-	   .setOrigin(0.5, 0.5).setDepth(-1);
-        // Based on your game size, it may "stretch" and distort.
-        back.displayWidth = 800;
-        back.displayHeight = 600;
-
-
-
-
-  
-        // Create player
-        this.player = this.physics.add.sprite(400, 300, 'player');
-this.player.displayWidth = 50;
-        this.player.displayHeight = 50;
-		 this.circle = this.physics.add.sprite(400, 300, 'circle').setDepth(5).setCircle(300).setOrigin(0.5, 0.5);
-		 this.circle.displayWidth = 200;
-        this.circle.displayHeight = 200;
-		this.circle.name='circle'
-		
-		  this.targetX = this.player.x; // Set initial target to player's starting position
-        this.targetY = this.player.y; // Set initial target to player's starting position
-        this.input.on('pointerdown', (pointer) => {
-            this.movePlayerToPoint(pointer.x, pointer.y);
-        });
-
-
-  
-  this.whip = this.physics.add.sprite(150, 100, 'whip');
-this.whip.displayHeight=32;
-  this.whip.displayWidth=32;
-  this.whip.setDepth(3);
-
-
-// Collider to attach the whip to the player
-        this.physics.add.collider(this.player, this.whip, this.attachWhipToPlayer, null, this);
-
-		
-		
-		  // Create a health bar
-       // Health bar graphics
-        this.healthBarBackground = this.add.graphics();
-        this.healthBar = this.add.graphics();
-		
-		
-		
-		
-		
-		
-		// Create player
-        this.player2 = this.physics.add.sprite(400, 300, 'player');
-this.player2.displayWidth = 50;
-        this.player2.displayHeight = 50;
-		
-		player=this.player;
-		
-		
-		       this.loots = this.physics.add.group();
-		
-		
-        // Create enemies group
-        this.enemies = this.physics.add.group();
-		  this.projectile = this.physics.add.group();
-		 // idle with only one frame, so repeat is not neaded
-		  this.anims.create({
-          key: 'walk',
-         frames: this.anims.generateFrameNumbers('player', { frames: [0,1,2,3,4,5] }),
-        frameRate: 10,
-        repeat: -1
-    });
-	
-	
-	 this.anims.create({
-          key: 'idle',
-         frames: this.anims.generateFrameNumbers('player', { frames: [5] }),
-        frameRate: 10,
-        repeat: -1
-    });
-	
-		 this.player.anims.play('idle', true);
-    this.anims.create({
-          key: 'walky',
-         frames: this.anims.generateFrameNumbers('enemy', { frames: [4,5,6,7] }),
-        frameRate: 10,
-        repeat: -1
-    });
-	
-	
-	
-
-        // Add enemies to the group
-        for (let i = 0; i < (1* this.currentLevel+1); i++) {
-            let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(10, 50), 'enemy');
-			  enemy.anims.play('walky', true);
-            // Set up enemy behavior here
+    update() {
+        if (this.gameEnded || this.isChoosingUpgrade) {
+            return;
         }
 
-        // Enable collision between player and enemies
-        this.physics.add.collider(this.player, this.enemies, this.handleCollision, null, this);
-		
-		this.physics.add.collider(this.hammer, this.enemies, this.handleCollisionItem, null, this);
-		
-			//this.physics.add.collider(this.circle, this.enemies, this.handleCollisionItem, null, this);
-	    this.physics.add.overlap(this.circle, this.enemies, this.handleCollisionItem, null, this);
-
-        // Set up player animations and controls here
-    }
-	
-	attachWhipToPlayer(player, whip) {
-    this.whipAttached = true; // Set a flag that the whip is attached
-    whip.setVelocity(0, 0); // Stop the whip's movement
-}
-  throwArrow() {
-        let arrow = this.projectile.create(100, 300, 'hammer');
-        arrow.setVelocityX(200);
-		
-		this.trailEmitter.start();
-       //this.trailEmitter.startFollow(arrow);
-	    this.trailEmitter.setPosition(arrow.x, arrow.y);
-       arrow.displayHeight=32;
-	    arrow.displayWidth=32;
-   arrow.waveAmplitude = 10;
-         arrow.waveFrequency = 0.05;
-         arrow.update = () => {
-			 this.trailEmitter.startFollow(arrow);
-			
-           /* arrow.y += Math.sin( arrow.x *  arrow.waveFrequency) *  arrow.waveAmplitude;*/
-        };
-    }	
-	   shootHammer() {
-        if (!this.enemies || this.enemies.getChildren().length === 0) {
-            return; // No enemies to shoot at
-        }
-
-         // Find the closest enemy using the custom function
-    let closestEnemy = this.findClosestEnemy();
-
-		if (closestEnemy) {
-			// Create a hammer projectile
-			let hammer = this.physics.add.sprite(this.player.x, this.player.y, 'hammer');
-			this.physics.moveToObject(hammer, closestEnemy, 300); // Move at 300 pixels/sec
-			hammer.displayHeight=32;
-			hammer.displayWidth=32;
-			// Optionally, add collision for the hammer with the enemy
-			this.physics.add.collider(hammer, closestEnemy, (hammer, enemy) => {
-				
-				 // Randomly decide to drop a heart
-        if (Math.random() < 0.25) { // 25% chance to drop a heart
-            this.dropHeart(enemy.x, enemy.y);
-        }
-
-
-				/////////////////////////////////////////////////////////////
-				 // Calculate a random number to display
-    const hitPoints = Phaser.Math.Between(5, 30); // Random points between 50 and 100
-
-    // Create a text object at the enemy's position
-    let hitText = this.add.text(enemy.x, enemy.y, hitPoints.toString(), {
-	  
-         fontSize: '20px',
-        fill: '#ffffff',  // White text
-        stroke: '#000000', // Black stroke
-        strokeThickness: 6, // Stroke thickness in pixels
-        align: 'center'  // Center align text
-    }).setOrigin(0.5, 0.5);
- // Position the emitter at the enemy's location
-    this.emitter.setPosition(enemy.x, enemy.y);
-    this.emitter.start(); // Start emitting particles
-
-    // Stop emitting after a short burst
-    this.time.delayedCall(200, () => {
-        this.emitter.stop();
-    }, [], this);
-    // Make the text disappear after 1 second
-    this.time.delayedCall(1000, () => {
-        hitText.destroy();
-    });
-////////////////////////////////////////////////////////////////				
-				hammer.destroy(); // Destroy the hammer on hit
-				enemy.destroy(); // Optionally destroy the enemy or apply damage
-				this.gainExperience(hitPoints)
-				// Additional effects upon hit can be added here
-			});
-		}
-    }
-	 dropHeart(x, y) {
-		 
-		  let heart  = this.loots.create(x, y, 'heart');
-        //let heart = this.physics.add.sprite(x, y, 'heart');
-        heart.setCollideWorldBounds(true);
-        this.physics.add.overlap(this.player, heart, this.collectHeart, null, this);
-    }
-	collectHeart(player, heart) {
-        heart.destroy();
-        this.playerHealth = Math.min(this.playerHealth + 10, this.playerMaxHealth);
+        this.updatePlayerMovement();
+        this.updateEnemies();
+        this.updateWeapons();
+        this.updateLootMagnet();
+        this.updateMultiplayerGhost();
         this.updateHealthBar();
-		   this.heartCount++;
-        this.updateHeartUI();
-    }
-	
-	updateHeartUI() {
-        if (this.heartCount > 0) {
-            this.heartIcon.setVisible(true);
-            this.heartText.setText('x' + this.heartCount).setVisible(true);
-        } else {
-            this.heartIcon.setVisible(false);
-            this.heartText.setVisible(false);
-		}
-	}
-	
-	
-	
-	
-	
-	
-	findClosestEnemy() {
-    let closestEnemy = null;
-    let closestDistance = Infinity;
-
-    this.enemies.getChildren().forEach((enemy) => {
-        let distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
-        if (distance < closestDistance) {
-            closestEnemy = enemy;
-            closestDistance = distance;
-        }
-    });
-
-    return closestEnemy;
-}
-
-	
-
-    update(time , delta) {
-		
-		 
-		
-		  this.projectile.getChildren().forEach(arrow => {
-            arrow.update();
-			 /*let speed = 0.02; // Speed of rotation
-    let radius = 100; // Radius of the circle
-   arrow.x = 400 + Math.cos(time * speed) * radius;
-    arrow.y = 300 + Math.sin(time * speed) * radius;*/
-        });
-		
-		
-		if(this.circle){
-this.circle.x=this.player.x
-this.circle.y=this.player.y
-		}
-	     // Update the container position to stay at the top left of the camera view
-    this.uiContainer.setPosition(this.cameras.main.scrollX, this.cameras.main.scrollY);
-		 this.updateHealthBar()
-		
-		 this.loots.getChildren().forEach((loot) => {
-            const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, loot.x, loot.y);
-            if (distance < 100) {
-                this.physics.moveToObject(loot, this.player, 200);
-            }else{
-			loot.setVelocity(0, 0);
-			}
-        });
-		
-		 
-		
-		// If the whip is attached, update its position to match the player
-    if (this.whipAttached) {
-        this.whip.setPosition(this.player.x, this.player.y);
-    }
-		mainscene.scene.scene.cameras.main.centerOn(this.player.x, this.player.y);
-		
-		 sendMessage(JSON.stringify({id:p.substring(1),x:player.x,y:player.y,side:player.flipX,movingx:player.body.velocity.x,movingy:player.body.velocity.y}))
-		 if(p.substring(1) !== otherplayer.id){
-			
-		 this.player2.x=otherplayer.x
-		 this.player2.y=otherplayer.y
-		 this.player2.flipX=otherplayer.side
-				 if(otherplayer.movingx!==0 || otherplayer.movingy!==0 ){
-					 this.player2.anims.play('walk', true);
-				 }else{
-					  this.player2.anims.play('idle', true);
-				 }
-		 }
-		 
-		 if(this.gameEnded){
-			 
-			 return;
-		 }
-        // Handle player movement and enemy behavior updates
-		// Move each enemy towards the player
-        this.enemies.children.iterate((enemy) => {
-            // Calculate the angle from the enemy to the player
-            var angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
-            
-            // Calculate velocity vector based on angle and enemy speed
-            const speed = 1* this.currentLevel+10; // Adjust speed as needed
-            enemy.body.velocity.x = Math.cos(angle) * speed;
-            enemy.body.velocity.y = Math.sin(angle) * speed;
-        });
-		
-		
-		if (this.AKey.isDown || cursors.left.isDown)
-    {
-        player.body.setVelocityX(-200);
-        player.anims.play('walk', true); // walk left
-        player.flipX = true; // flip the sprite to the left
-		
-		 this.targetX = this.player.x;
-        this.targetY = this.player.y;
-    }
-    else if (this.DKey.isDown || cursors.right.isDown)
-    {
-        player.body.setVelocityX(200);
-        player.anims.play('walk', true);
-        player.flipX = false; // use the original sprite looking to the right
-		
-		 this.targetX = this.player.x;
-        this.targetY = this.player.y;
-    }
-   
-    else if (this.WKey.isDown || cursors.up.isDown )
-    {
-        player.body.setVelocityY(-200); 
-        player.anims.play('walk', true);
-
-		this.targetX = this.player.x;
-        this.targetY = this.player.y;
-		
-    }
-	else if (this.SKey.isDown || cursors.down.isDown )
-    {
-        player.body.setVelocityY(200);   
-        player.anims.play('walk', true);	
-
-		this.targetX = this.player.x;
-        this.targetY = this.player.y;
-		
-    }
-	else{
-		player.body.setVelocityY(0);   
-player.body.setVelocityX(0);
-        player.anims.play('idle', true);	
-  // Logic to move player to clicked point
-       this.updatePlayerMovement();		
-	}
-		
-	 this.angle += this.speed;
-  if (this.angle > 2 * Math.PI) {
-      this.angle -= 2 * Math.PI; // reset angle to prevent overflow
-  }
-  this.hammer.x = player.x + this.radius * Math.cos(this.angle);
-  this.hammer.y = player.y + this.radius * Math.sin(this.angle);
-		
-		
-		
-    }
-	
-	    movePlayerToPoint(x, y) {
-        this.targetX = x;
-        this.targetY = y;
+        this.cleanupProjectiles();
     }
 
     updatePlayerMovement() {
-        const reachedX = Math.abs(this.player.x - this.targetX) < 4; // Close enough to target x
-        const reachedY = Math.abs(this.player.y - this.targetY) < 4; // Close enough to target y
+        const left = this.keys.A.isDown || cursors.left.isDown;
+        const right = this.keys.D.isDown || cursors.right.isDown;
+        const up = this.keys.W.isDown || cursors.up.isDown;
+        const down = this.keys.S.isDown || cursors.down.isDown;
+        const keyboardActive = left || right || up || down;
 
-        if (reachedX && reachedY) {
-            this.player.body.stop(); // Stop the player when the target is reached
+        if (keyboardActive) {
+            const x = (right ? 1 : 0) - (left ? 1 : 0);
+            const y = (down ? 1 : 0) - (up ? 1 : 0);
+            const direction = new Phaser.Math.Vector2(x, y).normalize().scale(this.moveSpeed);
+            this.player.setVelocity(direction.x, direction.y);
+            this.targetX = this.player.x;
+            this.targetY = this.player.y;
         } else {
-			
-            const speed = 200; // pixels per second
-            this.physics.moveTo(this.player, this.targetX, this.targetY, speed);
-			 this.player.anims.play('walk', true);
-        }
-    }
-		
-		
-     handleCollision(player, enemy) {
-		//console.log('hit')
-        // Handle what happens when a player hits an enemy
-		    if (!this.hitCooldown) {
-				this.cameras.main.shake(250, 0.01);
-            this.playerHealth -= 10; // Decrease health by 10 or whatever amount is suitable
-            this.updateHealthBar();
-
-            if (this.playerHealth <= 0) {
-                // Player is dead, trigger the end game sequence
-				if(!this.gameEnded){
-                this.endGame();
-				 this.gameEnded=true
-				}
+            const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, this.targetX, this.targetY);
+            if (distance > 8) {
+                this.physics.moveTo(this.player, this.targetX, this.targetY, this.moveSpeed);
             } else {
-                // Player was hit but is still alive, start hit cooldown
-                this.startHitCooldown();
+                this.player.setVelocity(0, 0);
             }
         }
-    }
-	
-	   
-   startHitCooldown() {
-        this.hitCooldown = true; // Activate the cooldown
-        
-        // Optionally change the player's appearance to indicate they've been hit
-        this.player.setTint(0xff0000);
 
-        // Set a timed event for 1 second to reset the cooldown
-        this.time.delayedCall(1000, () => {
-            this.hitCooldown = false;
-            this.player.clearTint(); // Reset the tint to indicate the player can be hit again
+        if (this.player.body.velocity.length() > 5) {
+            this.player.anims.play('walk', true);
+            this.player.flipX = this.player.body.velocity.x < 0;
+        } else {
+            this.player.anims.play('idle', true);
+        }
+    }
+
+    updateEnemies() {
+        this.enemies.children.iterate((enemy) => {
+            if (!enemy || !enemy.active) {
+                return;
+            }
+
+            const speed = enemy.speed || ENEMY_BASE_SPEED;
+            this.physics.moveToObject(enemy, this.player, speed);
+            enemy.flipX = enemy.body.velocity.x < 0;
         });
     }
-   
 
-	
-	 handleCollisionItem(item, enemy) {
-		// console.log(item.name)
-		 				/////////////////////////////////////////////////////////////
-				 // Calculate a random number to display
-    const hitPoints = Phaser.Math.Between(5, 30); // Random points between 50 and 100
-
-    // Create a text object at the enemy's position
-    let hitText = this.add.text(enemy.x, enemy.y, hitPoints.toString(), {
-	    
-         fontSize: '20px',
-        fill: '#ffffff',  // White text
-        stroke: '#000000', // Black stroke
-        strokeThickness: 6, // Stroke thickness in pixels
-        align: 'center'  // Center align text
-    }).setOrigin(0.5, 0.5);
-
-    // Make the text disappear after 1 second
-    this.time.delayedCall(1000, () => {
-        hitText.destroy();
-    });
-////////////////////////////////////////////////////////////////
-		 
-		//console.log('item hit')
-		enemy.destroy()
-               this.gainExperience(hitPoints)
-		 
-		if(item.name=='circle'){
-		 this.gainExperience(0.1)
-		}
-		else if(item.name=='hammer'){
-			 this.gainExperience(1)
-		}else{
-			return;
-		}
-        // Handle what happens when a player hits an enemy
+    updateWeapons() {
+        this.angle = (this.angle + this.orbitSpeed) % (Math.PI * 2);
+        this.orbitHammer.x = this.player.x + this.radius * Math.cos(this.angle);
+        this.orbitHammer.y = this.player.y + this.radius * Math.sin(this.angle);
+        this.orbitHammer.rotation += 0.16;
+        this.circle.setPosition(this.player.x, this.player.y);
     }
-	 
-	
-	    updateHealthBar() {
-		
-			   // Update health bar position and fill based on player's health
-        this.healthBarBackground.clear();
-        this.healthBarBackground.fillStyle(0x000000, 1);
-		const lolx=this.player.x
-		const loly=this.player.y
-        this.healthBarBackground.fillRect(lolx - 25, loly -40, 50, 10);
-        // Scale the health bar according to the player's health
-       // this.healthBar.scaleX = this.playerHealth / this.playerMaxHealth;
-        this.healthBar.clear();
-        this.healthBar.fillStyle(0xFF0000, 1);
-		// const fillWidth = Math.max(0, (this.player.Health / this.player.maxHealth) * 50);
-        this.healthBar.fillRect(lolx- 25, loly -40,(this.playerHealth / this.playerMaxHealth) * 50 , 10);
-        //this.healthBar.fillRect(this.player.x, this.player.y +42, this.playerHealth, 24);
-		
+
+    updateLootMagnet() {
+        this.pullCollectibles(this.loots, 150, 245);
+        this.pullCollectibles(this.gems, 190, 285);
     }
-	
-	onWaves(){
-		//console.log('waves')
-		 // Add enemies to the group
-        for (let i = 0; i < this.currentLevel+2; i++) {
-            let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(10, 50), 'enemy');
-			  enemy.anims.play('walky', true);
-            // Set up enemy behavior here
+
+    pullCollectibles(group, radius, speed) {
+        group.children.iterate((loot) => {
+            if (!loot || !loot.active) {
+                return;
+            }
+
+            const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, loot.x, loot.y);
+            if (distance < radius) {
+                this.physics.moveToObject(loot, this.player, speed);
+            } else {
+                loot.setVelocity(0, 0);
+            }
+        });
+    }
+
+    updateMultiplayerGhost() {
+        if (typeof sendMessage === 'function') {
+            sendMessage(JSON.stringify({
+                id: location.hash.substring(1),
+                x: this.player.x,
+                y: this.player.y,
+                side: this.player.flipX,
+                movingx: this.player.body.velocity.x,
+                movingy: this.player.body.velocity.y
+            }));
         }
 
-        // Enable collision between player and enemies
-        this.physics.add.collider(this.player, this.enemies, this.handleCollision, null, this);
-		
-		this.physics.add.collider(this.hammer, this.enemies, this.handleCollisionItem, null, this);
-		
-			this.physics.add.collider(this.circle, this.enemies, this.handleCollisionItem, null, this);
-		
-		
-	}
-	
-	 onCountdown() {
-        this.initialTime -= 1; // Decrease the timer by one
-        this.timeText.setText('Time: ' + this.formatTime(this.initialTime));
-
-          // When the timer reaches zero, check if any enemies are alive
-    if (this.initialTime <= 0) {
-        this.timedEvent.remove(); // Stop the timer
-
-        // Check if all enemies are dead
-		if (this.enemies.countActive(true)  > 0) {
-			
-			if(!this.gameEnded){
-
-				
-            this.resetGame(); // Reset the game if all enemies are dead
-			}
-		
-        } 
-        else if (this.enemies.countActive(true) === 0) {
-			if(!this.gameEnded){
-            this.resetGame(); // Reset the game if all enemies are dead
-			}
-		
-        } else {
-			
-			if(!this.gameEnded){
-           this.endGame(); // End the game if any enemies are alive
-			 //this.resetGame();
-			 this.gameEnded=true
-			}
-        }
-    }
-	
-    }
-	
-	endGame() {
-
-	
-		
-		this.enemies.clear(true, true);
-    // Stop all enemies
-    //this.enemies.setVelocityX(0);
-    //this.enemies.setVelocityY(0);
-	
-	this.player.setVelocityX(0);
-    this.player.setVelocityY(0);
-
-    // Display "You are dead" text
-  this.endText=  this.add.text(this.sys.game.config.width / 2, this.sys.game.config.height / 2, 'You are dead', {
-        fontSize: '64px',
-        fill: '#FF0000'
-    }).setOrigin(0.5);
-
-    // Optionally, stop the player from moving or taking any actions
-    // ... your code to stop the player ...
-    // Create a restart button
-   /* this.restartButton = this.add.text(this.sys.game.config.width / 2, (this.sys.game.config.height / 2)+50, 'Restart', {
-        fontSize: '32px',
-        fill: '#FFFFFF'
-    }).setOrigin(0.5).setInteractive();
-
-    // When the restart button is clicked, restart the game
-    this.restartButton.on('pointerdown', () => {
-		 this.enemies.clear(true, true);
-		  this.gameEnded=false
-      //  this.scene.restart();
-	  this.restartButton.setText('')
-	this.endText.setText('')
-	this.currentLevel=0;
-		 this.resetGame();
-		
-    });
-
-    // Change the button color when hovered
-    this.restartButton.on('pointerover', () => this.restartButton.setStyle({ fill: '#FFCC00' }));
-    this.restartButton.on('pointerout', () => this.restartButton.setStyle({ fill: '#FFFFFF' }));*/
-
-    // Optionally, stop the player from moving or taking any actions
-    // ... your code to stop the player ...
-
-    // You could also stop the scene or go to a game over scene
-    // this.scene.stop();
-    // this.scene.start('GameOverScene');
-	
-				 // Specify your button image
-    var buttonImage = 'assets/button.png'; // Ensure the path is correct
-   var buttonText = ''; // Text you might want to add alongside the image
-
-    // Create a button with an image inside it
-    var buttonHtml = '<button style="background-color: transparent; border: none; outline: none; cursor: pointer;"><img src="' + buttonImage + '" alt="Button Image" style="width: 50px; height: auto;">' + buttonText + '</button>';
-    button = this.add.dom(this.sys.game.config.width/2, this.sys.game.config.height/2+80).createFromHTML(buttonHtml);
-    button.addListener('click');
-    button.on('click', function () {
-        console.log('Button clicked!');
-	     
-	   
-		  mainscene.gameEnded=false
-      
-	  //mainscene.restartButton.setText('')
-	mainscene.endText.setText('')
-	mainscene.currentLevel=0;
-	mainscene.resetGame();
-	button.setVisible(false);  // This hides the button
-    });
-
-	 button.on('pointerover', () => button.setStyle({ fill: '#FFCC00' }));
-    button.on('pointerout', () => button.setStyle({ fill: '#FFFFFF' }));
-	
-}
-
-    resetGame() {
-
-	     this.playerExperience=0;
-		//button.setVisible(true); 
-		this.playerHealth=100;
-		this.updateHealthBar();
-		// Reset game elements, then increase the level and update the level text
-        this.currentLevel++;
-        this.levelText.setText('Level: ' + this.currentLevel);
-		
-			this.hitCooldown = false;
-        // Kill all enemies
-      //  this.enemies.clear(true, true);
-
-        // Reset player position to the middle of the map
-        this.player.setPosition(this.sys.game.config.width / 2, this.sys.game.config.height / 2);
-		
-		 this.anims.create({
-          key: 'walky'+ this.currentLevel,
-         frames: this.anims.generateFrameNumbers('enemy', { frames: [4+ (this.currentLevel *4),5+(this.currentLevel*4),6+(this.currentLevel*4),7+(this.currentLevel*4)] }),
-        frameRate: 10,
-        repeat: -1
-    });
-		// Add enemies to the group
-        for (let i = 0; i < (1*this.currentLevel); i++) {
-            let enemy = this.enemies.create(Phaser.Math.Between(100, 700), Phaser.Math.Between(100, 500), 'enemy');
-			  enemy.anims.play('walky'+this.currentLevel, true);
-            // Set up enemy behavior here
+        const other = window.otherplayer;
+        if (!other || other.id === location.hash.substring(1)) {
+            this.player2.setVisible(false);
+            return;
         }
 
-        // Enable collision between player and enemies
-        this.physics.add.collider(this.player, this.enemies, this.handleCollision, null, this);
-
-        // You could also restart the scene or reset other game elements as needed
-        // this.scene.restart();
-		
-		 // Reset the initial time for the timer
-    //this.initialTime = 120; // 2 minutes in seconds
-	 this.initialTime = 10; // 2 minutes in seconds
-
-    // Restart the timer event
-    this.timedEvent = this.time.addEvent({
-        delay: 1000,
-        callback: this.onCountdown,
-        callbackScope: this,
-        loop: true
-    });
-	
-	
+        this.player2.setVisible(true);
+        this.player2.setPosition(other.x, other.y);
+        this.player2.flipX = other.side;
+        this.player2.anims.play(other.movingx !== 0 || other.movingy !== 0 ? 'walk' : 'idle', true);
     }
 
-    formatTime(seconds) {
-        // Convert seconds (s) to a mm:ss format
-        const minutes = Math.floor(seconds / 60);
-    const partInSeconds = seconds % 60;
-    const formattedMinutes = String(minutes).padStart(2, '0');
-    const formattedSeconds = String(partInSeconds).padStart(2, '0');
-    return `${formattedMinutes}:${formattedSeconds}`;
+    cleanupProjectiles() {
+        this.hammers.children.iterate((hammer) => {
+            if (!hammer || !hammer.active) {
+                return;
+            }
+
+            hammer.rotation += 0.25;
+            if (hammer.createdAt && this.time.now - hammer.createdAt > 1800) {
+                hammer.destroy();
+            }
+        });
     }
 
-	    updateLevelUpBar(progress) {
-        const fillWidth = progress * this.cameras.main.width;
-        this.levelUpBarFill.clear();
-        this.levelUpBarFill.fillStyle(0x00ff00, 1);
-        this.levelUpBarFill.fillRect(0, this.cameras.main.height -790, fillWidth, 20);
+    shootHammer() {
+        if (this.gameEnded || this.enemies.countActive(true) === 0) {
+            return;
+        }
+
+        const closestEnemy = this.findClosestEnemy();
+        if (!closestEnemy) {
+            return;
+        }
+
+        const hammer = this.hammers.create(this.player.x, this.player.y, 'hammer');
+        hammer.setDisplaySize(32, 32);
+        hammer.setDepth(6);
+        hammer.createdAt = this.time.now;
+        this.physics.moveToObject(hammer, closestEnemy, HAMMER_SPEED);
+    }
+
+    findClosestEnemy() {
+        let closestEnemy = null;
+        let closestDistance = Infinity;
+
+        this.enemies.children.iterate((enemy) => {
+            if (!enemy || !enemy.active) {
+                return;
+            }
+
+            const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+            if (distance < closestDistance) {
+                closestDistance = distance;
+                closestEnemy = enemy;
+            }
+        });
+
+        return closestEnemy;
+    }
+
+    spawnWave(isOpeningWave = false) {
+        this.waveTimeLeft = WAVE_SECONDS;
+        this.updateHud();
+        this.spawnEnemies(this.currentLevel + (isOpeningWave ? 3 : 5));
+        this.showFloatingText(this.player.x, this.player.y - 90, `Wave ${this.currentLevel}`, '#ffdf6e', 30);
+    }
+
+    spawnEnemies(amount) {
+        for (let i = 0; i < amount; i++) {
+            const spawn = this.getEdgeSpawnPoint();
+            const type = Phaser.Math.Between(0, 3);
+            const enemy = this.enemies.create(spawn.x, spawn.y, 'enemy');
+            enemy.setDisplaySize(42, 42);
+            enemy.setDepth(4);
+            enemy.setCollideWorldBounds(true);
+            enemy.body.setSize(22, 24).setOffset(5, 5);
+            enemy.health = 16 + this.currentLevel * 8 + type * 4;
+            enemy.maxHealth = enemy.health;
+            enemy.speed = ENEMY_BASE_SPEED + this.currentLevel * 6 + type * 8;
+            enemy.xp = 12 + this.currentLevel * 3 + type * 3;
+            enemy.anims.play(`enemyWalk${type}`, true);
+        }
+    }
+
+    getEdgeSpawnPoint() {
+        const padding = 80;
+        const side = Phaser.Math.Between(0, 3);
+        const minX = Phaser.Math.Clamp(this.player.x - 520, padding, WORLD_WIDTH - padding);
+        const maxX = Phaser.Math.Clamp(this.player.x + 520, padding, WORLD_WIDTH - padding);
+        const minY = Phaser.Math.Clamp(this.player.y - 520, padding, WORLD_HEIGHT - padding);
+        const maxY = Phaser.Math.Clamp(this.player.y + 520, padding, WORLD_HEIGHT - padding);
+
+        if (side === 0) {
+            return { x: Phaser.Math.Between(minX, maxX), y: Math.max(padding, minY) };
+        }
+        if (side === 1) {
+            return { x: Phaser.Math.Between(minX, maxX), y: Math.min(WORLD_HEIGHT - padding, maxY) };
+        }
+        if (side === 2) {
+            return { x: Math.max(padding, minX), y: Phaser.Math.Between(minY, maxY) };
+        }
+        return { x: Math.min(WORLD_WIDTH - padding, maxX), y: Phaser.Math.Between(minY, maxY) };
+    }
+
+    handleHammerHit(hammer, enemy) {
+        if (!enemy.active) {
+            return;
+        }
+
+        const damage = Phaser.Math.Between(18, 34) + this.currentLevel * 2 + this.damageBonus;
+        enemy.health -= damage;
+        this.showDamage(enemy.x, enemy.y, damage);
+        this.flashEnemy(enemy);
+
+        if (hammer && hammer.active) {
+            hammer.destroy();
+        }
+
+        if (enemy.health <= 0) {
+            this.killEnemy(enemy);
+        }
+    }
+
+    handleOrbitHit(hammer, enemy) {
+        if (!enemy.active || enemy.lastOrbitHit && this.time.now - enemy.lastOrbitHit < 450) {
+            return;
+        }
+
+        enemy.lastOrbitHit = this.time.now;
+        const damage = 8 + this.currentLevel + Math.floor(this.damageBonus / 2);
+        enemy.health -= damage;
+        this.showDamage(enemy.x, enemy.y, damage);
+        this.flashEnemy(enemy);
+
+        if (enemy.health <= 0) {
+            this.killEnemy(enemy);
+        }
+    }
+
+    killEnemy(enemy) {
+        const x = enemy.x;
+        const y = enemy.y;
+        const xp = enemy.xp || 10;
+        enemy.destroy();
+        this.hitEmitter.explode(10, x, y);
+        this.dropGem(x, y, xp);
+
+        if (Math.random() < 0.18) {
+            this.dropHeart(x, y);
+        }
+    }
+
+    flashEnemy(enemy) {
+        enemy.setTint(0xff6262);
+        this.time.delayedCall(100, () => {
+            if (enemy.active) {
+                enemy.clearTint();
+            }
+        });
+    }
+
+    handlePlayerHit() {
+        if (this.hitCooldown || this.gameEnded) {
+            return;
+        }
+
+        this.hitCooldown = true;
+        this.playerHealth = Math.max(0, this.playerHealth - 14);
+        this.updateHealthBar();
+        this.cameras.main.shake(180, 0.008);
+        this.player.setTint(0xff5555);
+
+        if (this.playerHealth <= 0) {
+            this.endGame();
+            return;
+        }
+
+        this.time.delayedCall(850, () => {
+            this.hitCooldown = false;
+            this.player.clearTint();
+        });
+    }
+
+    dropHeart(x, y) {
+        const heart = this.loots.create(x, y, 'heart');
+        heart.setDisplaySize(24, 24);
+        heart.setDepth(3);
+        heart.setBounce(0.25);
+    }
+
+    dropGem(x, y, value) {
+        const gem = this.gems.create(x, y, 'gem');
+        gem.setDisplaySize(22, 22);
+        gem.setDepth(3);
+        gem.value = value;
+        gem.setVelocity(Phaser.Math.Between(-55, 55), Phaser.Math.Between(-55, 55));
+        this.tweens.add({
+            targets: gem,
+            scale: 1.2,
+            duration: 420,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    collectHeart(player, heart) {
+        heart.destroy();
+        this.heartCount++;
+        this.playerHealth = Math.min(this.playerMaxHealth, this.playerHealth + 18);
+        this.showFloatingText(this.player.x, this.player.y - 72, '+HP', '#80ff9d', 18);
+        this.updateHud();
+        this.updateHealthBar();
+    }
+
+    collectGem(player, gem) {
+        const value = gem.value || 10;
+        gem.destroy();
+        this.gainExperience(value);
+    }
+
+    tickWave() {
+        if (this.gameEnded) {
+            return;
+        }
+
+        this.waveTimeLeft--;
+        if (this.waveTimeLeft <= 0) {
+            this.currentLevel++;
+            this.playerHealth = Math.min(this.playerMaxHealth, this.playerHealth + 20);
+            this.enemies.clear(true, true);
+            this.spawnWave();
+        }
+
+        this.updateHud();
     }
 
     gainExperience(amount) {
         this.playerExperience += amount;
-        const progress = this.playerExperience / this.experienceToLevelUp;
-        this.updateLevelUpBar(progress);
-	   // console.log(progress)
-	     //this.updateLevelUpBar(amount);
-	    //console.log(amount)
+        while (this.playerExperience >= this.experienceToLevelUp) {
+            this.playerExperience -= this.experienceToLevelUp;
+            this.experienceToLevelUp = Math.floor(this.experienceToLevelUp * 1.28);
+            this.pendingUpgrades++;
+        }
+
+        if (this.pendingUpgrades > 0 && !this.isChoosingUpgrade) {
+            this.showUpgradeChoices();
+        }
+
+        this.updateHud();
     }
 
-    
+    showUpgradeChoices() {
+        if (this.isChoosingUpgrade || this.gameEnded || this.pendingUpgrades <= 0) {
+            return;
+        }
+
+        this.isChoosingUpgrade = true;
+        this.pendingUpgrades--;
+        this.physics.pause();
+        this.attackTimer.paused = true;
+        this.waveTimer.paused = true;
+        this.spawnTimer.paused = true;
+
+        const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x05050a, 0.76)
+            .setScrollFactor(0)
+            .setDepth(250);
+        const title = this.add.text(GAME_WIDTH / 2, 190, 'Choose an upgrade', {
+            fontFamily: 'Arial',
+            fontSize: '38px',
+            fill: '#fff4a3',
+            stroke: '#000000',
+            strokeThickness: 7
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(251);
+
+        const options = [
+            {
+                title: 'Faster Hammer',
+                body: 'Auto-attacks happen sooner.',
+                apply: () => {
+                    this.attackDelay = Math.max(320, this.attackDelay - 80);
+                    this.attackTimer.delay = this.attackDelay;
+                }
+            },
+            {
+                title: 'Wider Orbit',
+                body: 'Your spinning hammer covers more space.',
+                apply: () => {
+                    this.radius = Math.min(150, this.radius + 18);
+                }
+            },
+            {
+                title: 'Sharper Strikes',
+                body: 'All hammer damage increases.',
+                apply: () => {
+                    this.damageBonus += 7;
+                }
+            },
+            {
+                title: 'Fleet Boots',
+                body: 'Move faster through the horde.',
+                apply: () => {
+                    this.moveSpeed += 24;
+                }
+            },
+            {
+                title: 'Second Wind',
+                body: 'Heal now and increase max health.',
+                apply: () => {
+                    this.playerMaxHealth += 16;
+                    this.playerHealth = Math.min(this.playerMaxHealth, this.playerHealth + 46);
+                }
+            }
+        ];
+
+        Phaser.Utils.Array.Shuffle(options).slice(0, 3).forEach((option, index) => {
+            this.createUpgradeCard(180 + index * 220, 400, option, [overlay, title]);
+        });
+    }
+
+    createUpgradeCard(x, y, option, sharedNodes) {
+        const card = this.add.container(x, y).setScrollFactor(0).setDepth(252);
+        const bg = this.add.rectangle(0, 0, 190, 210, 0x171924, 0.96)
+            .setStrokeStyle(3, 0xfff0a6)
+            .setInteractive({ useHandCursor: true });
+        const title = this.add.text(0, -58, option.title, {
+            fontFamily: 'Arial',
+            fontSize: '22px',
+            fill: '#fff4a3',
+            stroke: '#000000',
+            strokeThickness: 4,
+            align: 'center',
+            wordWrap: { width: 160 }
+        }).setOrigin(0.5);
+        const body = this.add.text(0, 22, option.body, {
+            fontFamily: 'Arial',
+            fontSize: '17px',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center',
+            wordWrap: { width: 150 }
+        }).setOrigin(0.5);
+
+        card.add([bg, title, body]);
+        bg.on('pointerover', () => card.setScale(1.04));
+        bg.on('pointerout', () => card.setScale(1));
+        bg.on('pointerdown', () => {
+            option.apply();
+            sharedNodes.forEach((node) => node.destroy());
+            card.scene.children.list
+                .filter((child) => child.depth === 252)
+                .forEach((child) => child.destroy());
+            this.isChoosingUpgrade = false;
+            this.updateHud();
+            this.updateHealthBar();
+
+            if (this.pendingUpgrades > 0) {
+                this.showUpgradeChoices();
+                return;
+            }
+
+            this.physics.resume();
+            this.attackTimer.paused = false;
+            this.waveTimer.paused = false;
+            this.spawnTimer.paused = false;
+        });
+    }
+
+    updateHud() {
+        if (!this.levelText) {
+            return;
+        }
+
+        this.levelText.setText(`Wave ${this.currentLevel}`);
+        this.timeText.setText(this.formatTime(this.waveTimeLeft));
+        this.scoreText.setText(`XP ${Math.floor(this.playerExperience)} / ${this.experienceToLevelUp}`);
+        this.heartText.setText(`Hearts x${this.heartCount}`);
+
+        this.levelUpBarBackground.clear();
+        this.levelUpBarBackground.fillStyle(0x101018, 0.9);
+        this.levelUpBarBackground.fillRect(0, GAME_HEIGHT - 18, GAME_WIDTH, 18);
+
+        this.levelUpBarFill.clear();
+        this.levelUpBarFill.fillStyle(0x49d17f, 1);
+        const progress = Phaser.Math.Clamp(this.playerExperience / this.experienceToLevelUp, 0, 1);
+        this.levelUpBarFill.fillRect(0, GAME_HEIGHT - 18, GAME_WIDTH * progress, 18);
+    }
+
+    updateHealthBar() {
+        if (!this.healthBar || !this.player) {
+            return;
+        }
+
+        this.healthBarBackground.clear();
+        this.healthBarBackground.fillStyle(0x111111, 0.95);
+        this.healthBarBackground.fillRoundedRect(this.player.x - 34, this.player.y - 52, 68, 10, 3);
+
+        this.healthBar.clear();
+        const percent = Phaser.Math.Clamp(this.playerHealth / this.playerMaxHealth, 0, 1);
+        const color = percent > 0.45 ? 0x44e06f : 0xff4d4d;
+        this.healthBar.fillStyle(color, 1);
+        this.healthBar.fillRoundedRect(this.player.x - 32, this.player.y - 50, 64 * percent, 6, 2);
+    }
+
+    showDamage(x, y, amount) {
+        this.showFloatingText(x, y, amount.toString(), '#ffffff', 18);
+    }
+
+    showFloatingText(x, y, text, color, size) {
+        const label = this.add.text(x, y, text, {
+            fontFamily: 'Arial',
+            fontSize: `${size}px`,
+            fill: color,
+            stroke: '#000000',
+            strokeThickness: 5
+        }).setOrigin(0.5).setDepth(120);
+
+        this.tweens.add({
+            targets: label,
+            y: y - 34,
+            alpha: 0,
+            duration: 850,
+            ease: 'Cubic.easeOut',
+            onComplete: () => label.destroy()
+        });
+    }
+
+    endGame() {
+        this.gameEnded = true;
+        this.player.setVelocity(0, 0);
+        this.enemies.clear(true, true);
+        this.hammers.clear(true, true);
+        this.loots.clear(true, true);
+        this.gems.clear(true, true);
+
+        const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.68)
+            .setScrollFactor(0)
+            .setDepth(200);
+        const title = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 82, 'You were overrun', {
+            fontFamily: 'Arial',
+            fontSize: '44px',
+            fill: '#ff4f4f',
+            stroke: '#000000',
+            strokeThickness: 7
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+        const stats = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 - 24, `Reached Wave ${this.currentLevel}`, {
+            fontFamily: 'Arial',
+            fontSize: '24px',
+            fill: '#ffffff',
+            stroke: '#000000',
+            strokeThickness: 5
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
+        const restart = this.add.text(GAME_WIDTH / 2, GAME_HEIGHT / 2 + 58, 'Restart', {
+            fontFamily: 'Arial',
+            fontSize: '30px',
+            fill: '#fff4a3',
+            stroke: '#000000',
+            strokeThickness: 6,
+            padding: { x: 22, y: 12 }
+        }).setOrigin(0.5).setScrollFactor(0).setDepth(201).setInteractive({ useHandCursor: true });
+
+        restart.on('pointerover', () => restart.setScale(1.05));
+        restart.on('pointerout', () => restart.setScale(1));
+        restart.on('pointerdown', () => {
+            overlay.destroy();
+            title.destroy();
+            stats.destroy();
+            restart.destroy();
+            this.scene.restart();
+        });
+    }
+
+    formatTime(seconds) {
+        const safeSeconds = Math.max(0, seconds);
+        const minutes = Math.floor(safeSeconds / 60);
+        const partInSeconds = safeSeconds % 60;
+        return `${String(minutes).padStart(2, '0')}:${String(partInSeconds).padStart(2, '0')}`;
+    }
 }

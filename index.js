@@ -296,7 +296,7 @@ const config = {
       gravity: { y: 0 },
     },
   },
- scene: [VampScene,MenuScene ,DungeonScene,MainScene,FnofStart,EmptyScene,FnofScene,NewsScene]
+ scene: [MenuScene, VampScene, DungeonScene, MainScene, FnofStart, EmptyScene, FnofScene, NewsScene]
 };
 
 const game = new Phaser.Game(config);
