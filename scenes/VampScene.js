@@ -1,4 +1,4 @@
-const GAME_WIDTH = 800;
+﻿const GAME_WIDTH = 800;
 const GAME_HEIGHT = 800;
 const WORLD_WIDTH = 1800;
 const WORLD_HEIGHT = 1400;
@@ -21,11 +21,21 @@ export default class VampScene extends Phaser.Scene {
         this.load.image('circle', 'assets/circle.png');
         this.load.spritesheet('player', 'assets/hero.png', { frameWidth: 180, frameHeight: 198 });
         this.load.spritesheet('enemy', 'assets/enemy.png', { frameWidth: 32, frameHeight: 32 });
+        this.load.spritesheet('skeletonMob', 'assets/skeleton_sheet.png', { frameWidth: 112, frameHeight: 200 });
+        this.load.spritesheet('creeperMob', 'assets/creeper_sheet.png', { frameWidth: 112, frameHeight: 200 });
         this.load.image('hammer', 'assets/hammer.png');
+        this.load.image('sword', 'assets/sword.png');
         this.load.image('whip', 'assets/whip.png');
         this.load.image('heart', 'assets/heart.png');
         this.load.image('gem', 'assets/coinGold.png');
+        this.load.spritesheet('chest', 'assets/chest_sheet.png', { frameWidth: 16, frameHeight: 16 });
         this.load.image('redParticle', 'assets/heart.png');
+        this.load.image('powerFurnaceCart', 'assets/powerups/furnace_minecart.png');
+        this.load.image('powerGhastEgg', 'assets/powerups/ghast_spawn_egg.png');
+        this.load.image('powerGhastTear', 'assets/powerups/ghast_tear.png');
+        this.load.image('powerFoxEgg', 'assets/powerups/fox_spawn_egg.png');
+        this.load.image('powerFrogEgg', 'assets/powerups/frog_spawn_egg.png');
+        this.load.image('powerFriendSherd', 'assets/powerups/friend_pottery_sherd.png');
     }
 
     create() {
@@ -57,12 +67,17 @@ export default class VampScene extends Phaser.Scene {
         this.whipAttached = false;
         this.isChoosingUpgrade = false;
         this.pendingUpgrades = 0;
+        this.invulnerable = false;
         this.damageBonus = 0;
         this.attackDelay = 720;
         this.moveSpeed = PLAYER_SPEED;
+        this.lootMagnetRadius = 150;
+        this.gemMagnetRadius = 190;
         this.angle = 0;
         this.radius = 82;
         this.orbitSpeed = 0.055;
+        this.extraOrbiters = [];
+        this.activePowerupIcons = [];
     }
 
     createWorld() {
@@ -96,6 +111,8 @@ export default class VampScene extends Phaser.Scene {
         this.hammers = this.physics.add.group();
         this.loots = this.physics.add.group();
         this.gems = this.physics.add.group();
+        this.powerups = this.physics.add.group();
+        this.chests = this.physics.add.group();
         this.projectiles = this.physics.add.group();
 
         this.physics.add.overlap(this.player, this.enemies, this.handlePlayerHit, null, this);
@@ -104,6 +121,8 @@ export default class VampScene extends Phaser.Scene {
         this.physics.add.overlap(this.projectiles, this.enemies, this.handleHammerHit, null, this);
         this.physics.add.overlap(this.player, this.loots, this.collectHeart, null, this);
         this.physics.add.overlap(this.player, this.gems, this.collectGem, null, this);
+        this.physics.add.overlap(this.player, this.powerups, this.collectPowerup, null, this);
+        this.physics.add.overlap(this.player, this.chests, this.openChest, null, this);
     }
 
     createAnimations() {
@@ -130,6 +149,33 @@ export default class VampScene extends Phaser.Scene {
             });
         }
 
+        this.anims.create({
+            key: 'skeletonWalk',
+            frames: this.anims.generateFrameNumbers('skeletonMob', { start: 0, end: 5 }),
+            frameRate: 8,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'creeperWalk',
+            frames: this.anims.generateFrameNumbers('creeperMob', { start: 0, end: 5 }),
+            frameRate: 9,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'chestIdle',
+            frames: this.anims.generateFrameNumbers('chest', { start: 0, end: 3 }),
+            frameRate: 5,
+            repeat: -1
+        });
+
+        this.anims.create({
+            key: 'chestOpen',
+            frames: this.anims.generateFrameNumbers('chest', { start: 4, end: 7 }),
+            frameRate: 10,
+            repeat: 0
+        });
         this.player.anims.play('idle', true);
         this.player2.anims.play('idle', true);
     }
@@ -159,6 +205,7 @@ export default class VampScene extends Phaser.Scene {
         this.timeText = this.add.text(GAME_WIDTH - 18, 18, '00:30', hudStyle).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
         this.scoreText = this.add.text(18, 48, 'XP 0 / 120', { ...hudStyle, fontSize: '18px' }).setScrollFactor(0).setDepth(100);
         this.heartText = this.add.text(GAME_WIDTH - 18, 48, 'Hearts x0', { ...hudStyle, fontSize: '18px' }).setOrigin(1, 0).setScrollFactor(0).setDepth(100);
+        this.activePowerupContainer = this.add.container(GAME_WIDTH / 2, 34).setScrollFactor(0).setDepth(130);
 
         this.levelUpBarBackground = this.add.graphics().setScrollFactor(0).setDepth(99);
         this.levelUpBarFill = this.add.graphics().setScrollFactor(0).setDepth(100);
@@ -215,6 +262,15 @@ export default class VampScene extends Phaser.Scene {
             callbackScope: this,
             loop: true
         });
+
+        this.powerupTimer = this.time.addEvent({
+            delay: 15000,
+            callback: this.spawnPowerup,
+            callbackScope: this,
+            loop: true
+        });
+
+        this.time.delayedCall(2500, this.spawnPowerup, [], this);
     }
 
     update() {
@@ -280,11 +336,23 @@ export default class VampScene extends Phaser.Scene {
         this.orbitHammer.y = this.player.y + this.radius * Math.sin(this.angle);
         this.orbitHammer.rotation += 0.16;
         this.circle.setPosition(this.player.x, this.player.y);
+
+        this.extraOrbiters.forEach((orbiter, index) => {
+            if (!orbiter.active) {
+                return;
+            }
+
+            const offset = this.angle + ((index + 1) * Math.PI * 0.66);
+            orbiter.x = this.player.x + (this.radius + 34) * Math.cos(offset);
+            orbiter.y = this.player.y + (this.radius + 34) * Math.sin(offset);
+            orbiter.rotation -= 0.19;
+        });
     }
 
     updateLootMagnet() {
-        this.pullCollectibles(this.loots, 150, 245);
-        this.pullCollectibles(this.gems, 190, 285);
+        this.pullCollectibles(this.loots, this.lootMagnetRadius, 245);
+        this.pullCollectibles(this.gems, this.gemMagnetRadius, 285);
+        this.pullCollectibles(this.powerups, this.gemMagnetRadius + 30, 260);
     }
 
     pullCollectibles(group, radius, speed) {
@@ -349,10 +417,11 @@ export default class VampScene extends Phaser.Scene {
             return;
         }
 
-        const hammer = this.hammers.create(this.player.x, this.player.y, 'hammer');
+        const hammer = this.hammers.create(this.player.x, this.player.y, 'sword');
         hammer.setDisplaySize(32, 32);
         hammer.setDepth(6);
         hammer.createdAt = this.time.now;
+        hammer.rotation = Phaser.Math.Angle.Between(this.player.x, this.player.y, closestEnemy.x, closestEnemy.y) + Math.PI / 4;
         this.physics.moveToObject(hammer, closestEnemy, HAMMER_SPEED);
     }
 
@@ -386,16 +455,44 @@ export default class VampScene extends Phaser.Scene {
         for (let i = 0; i < amount; i++) {
             const spawn = this.getEdgeSpawnPoint();
             const type = Phaser.Math.Between(0, 3);
-            const enemy = this.enemies.create(spawn.x, spawn.y, 'enemy');
-            enemy.setDisplaySize(42, 42);
+            const skeletonChance = this.currentLevel >= 2 ? Math.min(0.14 + this.currentLevel * 0.03, 0.34) : 0;
+            const creeperChance = this.currentLevel >= 3 ? Math.min(0.10 + this.currentLevel * 0.025, 0.28) : 0;
+            const roll = Math.random();
+            const isCreeper = roll < creeperChance;
+            const isSkeleton = !isCreeper && roll < creeperChance + skeletonChance;
+            const texture = isCreeper ? 'creeperMob' : (isSkeleton ? 'skeletonMob' : 'enemy');
+            const enemy = this.enemies.create(spawn.x, spawn.y, texture);
             enemy.setDepth(4);
             enemy.setCollideWorldBounds(true);
-            enemy.body.setSize(22, 24).setOffset(5, 5);
-            enemy.health = 16 + this.currentLevel * 8 + type * 4;
+
+            if (isCreeper) {
+                enemy.mobType = 'creeper';
+                enemy.setDisplaySize(48, 78);
+                enemy.body.setSize(44, 150).setOffset(34, 42);
+                enemy.health = 24 + this.currentLevel * 8;
+                enemy.speed = ENEMY_BASE_SPEED + 34 + this.currentLevel * 8;
+                enemy.xp = 22 + this.currentLevel * 5;
+                enemy.exploding = false;
+                enemy.anims.play('creeperWalk', true);
+            } else if (isSkeleton) {
+                enemy.mobType = 'skeleton';
+                enemy.setDisplaySize(54, 76);
+                enemy.body.setSize(58, 150).setOffset(27, 42);
+                enemy.health = 44 + this.currentLevel * 15;
+                enemy.speed = ENEMY_BASE_SPEED + this.currentLevel * 4;
+                enemy.xp = 28 + this.currentLevel * 6;
+                enemy.anims.play('skeletonWalk', true);
+            } else {
+                enemy.mobType = 'ghoul';
+                enemy.setDisplaySize(42, 42);
+                enemy.body.setSize(22, 24).setOffset(5, 5);
+                enemy.health = 16 + this.currentLevel * 8 + type * 4;
+                enemy.speed = ENEMY_BASE_SPEED + this.currentLevel * 6 + type * 8;
+                enemy.xp = 12 + this.currentLevel * 3 + type * 3;
+                enemy.anims.play(`enemyWalk${type}`, true);
+            }
+
             enemy.maxHealth = enemy.health;
-            enemy.speed = ENEMY_BASE_SPEED + this.currentLevel * 6 + type * 8;
-            enemy.xp = 12 + this.currentLevel * 3 + type * 3;
-            enemy.anims.play(`enemyWalk${type}`, true);
         }
     }
 
@@ -419,6 +516,41 @@ export default class VampScene extends Phaser.Scene {
         return { x: Math.min(WORLD_WIDTH - padding, maxX), y: Phaser.Math.Between(minY, maxY) };
     }
 
+    explodeCreeper(enemy) {
+        if (!enemy.active || enemy.exploding) {
+            return;
+        }
+
+        enemy.exploding = true;
+        enemy.setVelocity(0, 0);
+        enemy.setTint(0xd8ff62);
+        this.cameras.main.shake(140, 0.006);
+
+        const x = enemy.x;
+        const y = enemy.y;
+        const blast = this.add.circle(x, y, 24, 0x9cff5f, 0.45).setDepth(7);
+        this.tweens.add({
+            targets: blast,
+            radius: 86,
+            alpha: 0,
+            duration: 260,
+            ease: 'Cubic.easeOut',
+            onComplete: () => blast.destroy()
+        });
+
+        const distance = Phaser.Math.Distance.Between(x, y, this.player.x, this.player.y);
+        if (distance < 86 && !this.invulnerable) {
+            this.playerHealth = Math.max(0, this.playerHealth - 28);
+            this.updateHealthBar();
+            this.player.setTint(0xff5555);
+            this.time.delayedCall(220, () => this.player.clearTint());
+            if (this.playerHealth <= 0) {
+                this.endGame();
+            }
+        }
+
+        enemy.destroy();
+    }
     handleHammerHit(hammer, enemy) {
         if (!enemy.active) {
             return;
@@ -458,11 +590,14 @@ export default class VampScene extends Phaser.Scene {
         const x = enemy.x;
         const y = enemy.y;
         const xp = enemy.xp || 10;
+        const mobType = enemy.mobType;
         enemy.destroy();
         this.hitEmitter.explode(10, x, y);
         this.dropGem(x, y, xp);
 
-        if (Math.random() < 0.18) {
+        if (mobType === 'skeleton') {
+            this.spawnChest(x, y);
+        } else if (Math.random() < 0.18) {
             this.dropHeart(x, y);
         }
     }
@@ -477,7 +612,7 @@ export default class VampScene extends Phaser.Scene {
     }
 
     handlePlayerHit() {
-        if (this.hitCooldown || this.gameEnded) {
+        if (this.hitCooldown || this.invulnerable || this.gameEnded) {
             return;
         }
 
@@ -536,6 +671,243 @@ export default class VampScene extends Phaser.Scene {
         this.gainExperience(value);
     }
 
+
+    spawnChest(x, y) {
+        if (this.gameEnded || !this.chests || x === undefined || y === undefined) {
+            return;
+        }
+
+        const chestX = Phaser.Math.Clamp(x, 80, WORLD_WIDTH - 80);
+        const chestY = Phaser.Math.Clamp(y, 80, WORLD_HEIGHT - 80);
+        const chest = this.chests.create(chestX, chestY, 'chest');
+        chest.setDisplaySize(42, 42);
+        chest.setDepth(3);
+        chest.body.setSize(28, 24).setOffset(2, 5);
+        chest.opening = false;
+        chest.anims.play('chestIdle', true);
+
+        this.tweens.add({
+            targets: chest,
+            y: chestY - 5,
+            duration: 850,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+        this.showFloatingText(chestX, chestY - 42, 'Chest!', '#fff4a3', 18);
+    }
+
+    openChest(player, chest) {
+        if (!chest.active || chest.opening) {
+            return;
+        }
+
+        chest.opening = true;
+        chest.body.enable = false;
+        chest.setVelocity(0, 0);
+        this.tweens.killTweensOf(chest);
+        chest.anims.play('chestOpen', true);
+        this.cameras.main.shake(160, 0.004);
+        this.showFloatingText(chest.x, chest.y - 50, 'Treasure!', '#fff4a3', 22);
+
+        const sparkleColor = 0xfff4a3;
+        for (let i = 0; i < 12; i++) {
+            const angle = (Math.PI * 2 * i) / 12;
+            const sparkle = this.add.circle(chest.x, chest.y, 4, sparkleColor, 0.95).setDepth(8);
+            this.tweens.add({
+                targets: sparkle,
+                x: chest.x + Math.cos(angle) * Phaser.Math.Between(32, 74),
+                y: chest.y + Math.sin(angle) * Phaser.Math.Between(24, 58),
+                alpha: 0,
+                scale: 0.2,
+                duration: 520,
+                ease: 'Cubic.easeOut',
+                onComplete: () => sparkle.destroy()
+            });
+        }
+
+        this.time.delayedCall(320, () => {
+            this.dropPowerup(chest.x, chest.y - 18);
+            this.dropGem(chest.x - 20, chest.y + 12, 35 + this.currentLevel * 7);
+            this.dropGem(chest.x + 20, chest.y + 12, 35 + this.currentLevel * 7);
+        });
+
+        this.time.delayedCall(900, () => chest.destroy());
+    }
+    getPowerupTypes() {
+        return [
+            { key: 'powerFurnaceCart', label: 'Furnace Rush', tint: '#ff9f43' },
+            { key: 'powerGhastEgg', label: 'Ghast Burst', tint: '#f2f2f2' },
+            { key: 'powerGhastTear', label: 'Ghast Shield', tint: '#9bf4ff' },
+            { key: 'powerFoxEgg', label: 'Fox Fury', tint: '#ff7a2f' },
+            { key: 'powerFrogEgg', label: 'Frog Magnet', tint: '#78ff7a' },
+            { key: 'powerFriendSherd', label: 'Friend Orbit', tint: '#d98d64' }
+        ];
+    }
+
+    spawnPowerup() {
+        if (this.gameEnded || this.isChoosingUpgrade) {
+            return;
+        }
+
+        const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+        const distance = Phaser.Math.Between(180, 420);
+        const x = Phaser.Math.Clamp(this.player.x + Math.cos(angle) * distance, 80, WORLD_WIDTH - 80);
+        const y = Phaser.Math.Clamp(this.player.y + Math.sin(angle) * distance, 80, WORLD_HEIGHT - 80);
+        this.dropPowerup(x, y);
+    }
+
+    dropPowerup(x, y) {
+        const type = Phaser.Utils.Array.GetRandom(this.getPowerupTypes());
+        const powerup = this.powerups.create(x, y, type.key);
+        powerup.powerupKey = type.key;
+        powerup.powerupLabel = type.label;
+        powerup.powerupTint = type.tint;
+        powerup.setDisplaySize(30, 30);
+        powerup.setDepth(4);
+        powerup.setVelocity(Phaser.Math.Between(-35, 35), Phaser.Math.Between(-35, 35));
+
+        this.tweens.add({
+            targets: powerup,
+            y: y - 8,
+            duration: 600,
+            yoyo: true,
+            repeat: -1,
+            ease: 'Sine.easeInOut'
+        });
+    }
+
+    collectPowerup(player, powerup) {
+        const key = powerup.powerupKey;
+        const label = powerup.powerupLabel;
+        const tint = powerup.powerupTint;
+        powerup.destroy();
+        this.showFloatingText(this.player.x, this.player.y - 94, label, tint, 22);
+        this.applyPowerup(key, label, tint);
+    }
+
+    applyPowerup(key, label, tint) {
+        if (key === 'powerFurnaceCart') {
+            this.showActivePowerupIcon(key, label, tint, 8000);
+            this.temporaryStat('moveSpeed', 110, 8000);
+            this.player.setTint(0xff9f43);
+            this.time.delayedCall(8000, () => this.player.clearTint());
+            return;
+        }
+
+        if (key === 'powerGhastEgg') {
+            this.showActivePowerupIcon(key, label, tint, 1800);
+            this.shootRadialHammers(12);
+            return;
+        }
+
+        if (key === 'powerGhastTear') {
+            this.showActivePowerupIcon(key, label, tint, 5500);
+            this.invulnerable = true;
+            this.playerHealth = Math.min(this.playerMaxHealth, this.playerHealth + 35);
+            this.updateHealthBar();
+            this.player.setTint(0x9bf4ff);
+            this.time.delayedCall(5500, () => {
+                this.invulnerable = false;
+                this.player.clearTint();
+            });
+            return;
+        }
+
+        if (key === 'powerFoxEgg') {
+            this.showActivePowerupIcon(key, label, tint, 9000);
+            this.temporaryStat('damageBonus', 18, 9000);
+            this.attackTimer.delay = Math.max(260, this.attackTimer.delay - 180);
+            this.time.delayedCall(9000, () => {
+                this.attackTimer.delay = this.attackDelay;
+            });
+            return;
+        }
+
+        if (key === 'powerFrogEgg') {
+            this.showActivePowerupIcon(key, label, tint, 9000);
+            this.temporaryStat('gemMagnetRadius', 360, 9000);
+            this.temporaryStat('lootMagnetRadius', 260, 9000);
+            return;
+        }
+
+        if (key === 'powerFriendSherd') {
+            this.showActivePowerupIcon(key, label, tint, 12000);
+            this.addFriendOrbiter();
+        }
+    }
+
+    showActivePowerupIcon(key, label, tint, duration) {
+        if (!this.activePowerupContainer) {
+            return;
+        }
+
+        const slot = this.add.container(0, 0);
+        const bg = this.add.rectangle(0, 0, 42, 42, 0x101018, 0.86)
+            .setStrokeStyle(2, Phaser.Display.Color.HexStringToColor(tint).color);
+        const icon = this.add.image(0, -2, key).setDisplaySize(28, 28);
+        const barBack = this.add.rectangle(0, 24, 34, 5, 0x05050a, 0.9);
+        const barFill = this.add.rectangle(-17, 24, 34, 5, Phaser.Display.Color.HexStringToColor(tint).color, 1)
+            .setOrigin(0, 0.5);
+
+        slot.add([bg, icon, barBack, barFill]);
+        slot.powerupLabel = label;
+        this.activePowerupContainer.add(slot);
+        this.activePowerupIcons.push(slot);
+        this.layoutActivePowerupIcons();
+
+        this.tweens.add({
+            targets: barFill,
+            scaleX: 0,
+            duration,
+            ease: 'Linear'
+        });
+
+        this.time.delayedCall(duration, () => {
+            this.activePowerupIcons = this.activePowerupIcons.filter((item) => item !== slot);
+            slot.destroy();
+            this.layoutActivePowerupIcons();
+        });
+    }
+
+    layoutActivePowerupIcons() {
+        const spacing = 50;
+        const startX = -((this.activePowerupIcons.length - 1) * spacing) / 2;
+        this.activePowerupIcons.forEach((slot, index) => {
+            slot.setPosition(startX + index * spacing, 0);
+        });
+    }
+    temporaryStat(statName, boostAmount, duration) {
+        this[statName] += boostAmount;
+        this.time.delayedCall(duration, () => {
+            this[statName] -= boostAmount;
+        });
+    }
+
+    shootRadialHammers(amount) {
+        for (let i = 0; i < amount; i++) {
+            const angle = (Math.PI * 2 * i) / amount;
+            const hammer = this.hammers.create(this.player.x, this.player.y, 'hammer');
+            hammer.setDisplaySize(32, 32);
+            hammer.setDepth(6);
+            hammer.createdAt = this.time.now;
+            hammer.setVelocity(Math.cos(angle) * HAMMER_SPEED, Math.sin(angle) * HAMMER_SPEED);
+        }
+    }
+
+    addFriendOrbiter() {
+        const orbiter = this.physics.add.sprite(this.player.x, this.player.y, 'powerFriendSherd');
+        orbiter.setDisplaySize(34, 34);
+        orbiter.setDepth(6);
+        this.extraOrbiters.push(orbiter);
+        this.physics.add.overlap(orbiter, this.enemies, this.handleOrbitHit, null, this);
+
+        this.time.delayedCall(12000, () => {
+            this.extraOrbiters = this.extraOrbiters.filter((item) => item !== orbiter);
+            orbiter.destroy();
+        });
+    }
+
     tickWave() {
         if (this.gameEnded) {
             return;
@@ -578,6 +950,8 @@ export default class VampScene extends Phaser.Scene {
         this.attackTimer.paused = true;
         this.waveTimer.paused = true;
         this.spawnTimer.paused = true;
+        this.powerupTimer.paused = true;
+        if (this.chestTimer) this.chestTimer.paused = true;
 
         const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x05050a, 0.76)
             .setScrollFactor(0)
@@ -593,6 +967,7 @@ export default class VampScene extends Phaser.Scene {
         const options = [
             {
                 title: 'Faster Hammer',
+                icon: 'hammer',
                 body: 'Auto-attacks happen sooner.',
                 apply: () => {
                     this.attackDelay = Math.max(320, this.attackDelay - 80);
@@ -601,6 +976,7 @@ export default class VampScene extends Phaser.Scene {
             },
             {
                 title: 'Wider Orbit',
+                icon: 'circle',
                 body: 'Your spinning hammer covers more space.',
                 apply: () => {
                     this.radius = Math.min(150, this.radius + 18);
@@ -608,6 +984,7 @@ export default class VampScene extends Phaser.Scene {
             },
             {
                 title: 'Sharper Strikes',
+                icon: 'sword',
                 body: 'All hammer damage increases.',
                 apply: () => {
                     this.damageBonus += 7;
@@ -615,6 +992,7 @@ export default class VampScene extends Phaser.Scene {
             },
             {
                 title: 'Fleet Boots',
+                icon: 'powerFurnaceCart',
                 body: 'Move faster through the horde.',
                 apply: () => {
                     this.moveSpeed += 24;
@@ -622,6 +1000,7 @@ export default class VampScene extends Phaser.Scene {
             },
             {
                 title: 'Second Wind',
+                icon: 'heart',
                 body: 'Heal now and increase max health.',
                 apply: () => {
                     this.playerMaxHealth += 16;
@@ -630,17 +1009,20 @@ export default class VampScene extends Phaser.Scene {
             }
         ];
 
+        this.activeUpgradeCards = [];
+        this.activeUpgradeKeyCleanups = [];
         Phaser.Utils.Array.Shuffle(options).slice(0, 3).forEach((option, index) => {
-            this.createUpgradeCard(180 + index * 220, 400, option, [overlay, title]);
+            const card = this.createUpgradeCard(180 + index * 220, 400, option, [overlay, title], index + 1);
+            this.activeUpgradeCards.push(card);
         });
     }
 
-    createUpgradeCard(x, y, option, sharedNodes) {
+    createUpgradeCard(x, y, option, sharedNodes, slotNumber) {
         const card = this.add.container(x, y).setScrollFactor(0).setDepth(252);
         const bg = this.add.rectangle(0, 0, 190, 210, 0x171924, 0.96)
-            .setStrokeStyle(3, 0xfff0a6)
-            .setInteractive({ useHandCursor: true });
-        const title = this.add.text(0, -58, option.title, {
+            .setStrokeStyle(3, 0xfff0a6);
+        const icon = this.add.image(0, -66, option.icon).setDisplaySize(42, 42);
+        const title = this.add.text(0, -22, option.title, {
             fontFamily: 'Arial',
             fontSize: '22px',
             fill: '#fff4a3',
@@ -649,7 +1031,7 @@ export default class VampScene extends Phaser.Scene {
             align: 'center',
             wordWrap: { width: 160 }
         }).setOrigin(0.5);
-        const body = this.add.text(0, 22, option.body, {
+        const body = this.add.text(0, 42, option.body, {
             fontFamily: 'Arial',
             fontSize: '17px',
             fill: '#ffffff',
@@ -658,30 +1040,75 @@ export default class VampScene extends Phaser.Scene {
             align: 'center',
             wordWrap: { width: 150 }
         }).setOrigin(0.5);
+        const shortcut = this.add.text(0, 82, `Press ${slotNumber}`, {
+            fontFamily: 'Arial',
+            fontSize: '15px',
+            fill: '#fff4a3',
+            stroke: '#000000',
+            strokeThickness: 3,
+            align: 'center'
+        }).setOrigin(0.5);
 
-        card.add([bg, title, body]);
-        bg.on('pointerover', () => card.setScale(1.04));
-        bg.on('pointerout', () => card.setScale(1));
-        bg.on('pointerdown', () => {
-            option.apply();
-            sharedNodes.forEach((node) => node.destroy());
-            card.scene.children.list
-                .filter((child) => child.depth === 252)
-                .forEach((child) => child.destroy());
-            this.isChoosingUpgrade = false;
-            this.updateHud();
-            this.updateHealthBar();
+        card.add([bg, icon, title, body, shortcut]);
+        card.setSize(190, 210);
+        card.setInteractive(new Phaser.Geom.Rectangle(-95, -105, 190, 210), Phaser.Geom.Rectangle.Contains);
 
-            if (this.pendingUpgrades > 0) {
-                this.showUpgradeChoices();
-                return;
+        const choose = () => this.chooseUpgrade(option, sharedNodes);
+        const hitZone = this.add.zone(x, y, 210, 230)
+            .setScrollFactor(0)
+            .setDepth(253)
+            .setInteractive({ useHandCursor: true });
+        card.hitZone = hitZone;
+        card.on('pointerover', () => card.setScale(1.04));
+        card.on('pointerout', () => card.setScale(1));
+        card.on('pointerdown', choose);
+        bg.setInteractive(new Phaser.Geom.Rectangle(-95, -105, 190, 210), Phaser.Geom.Rectangle.Contains);
+        bg.on('pointerdown', choose);
+        hitZone.on('pointerover', () => card.setScale(1.04));
+        hitZone.on('pointerout', () => card.setScale(1));
+        hitZone.on('pointerdown', choose);
+        const shortcutKeys = [
+            Phaser.Input.Keyboard.KeyCodes.ONE,
+            Phaser.Input.Keyboard.KeyCodes.TWO,
+            Phaser.Input.Keyboard.KeyCodes.THREE
+        ];
+        const shortcutKey = this.input.keyboard.addKey(shortcutKeys[slotNumber - 1]);
+        shortcutKey.once('down', choose);
+        this.activeUpgradeKeyCleanups.push(() => shortcutKey.off('down', choose));
+        return card;
+    }
+
+    chooseUpgrade(option, sharedNodes) {
+        if (!this.isChoosingUpgrade) {
+            return;
+        }
+
+        this.activeUpgradeKeyCleanups.forEach((cleanup) => cleanup());
+        this.activeUpgradeKeyCleanups = [];
+        option.apply();
+        sharedNodes.forEach((node) => node.destroy());
+        this.activeUpgradeCards.forEach((card) => {
+            if (card.hitZone) {
+                card.hitZone.destroy();
             }
-
-            this.physics.resume();
-            this.attackTimer.paused = false;
-            this.waveTimer.paused = false;
-            this.spawnTimer.paused = false;
+            card.destroy();
         });
+        this.activeUpgradeCards = [];
+        this.isChoosingUpgrade = false;
+        this.updateHud();
+        this.updateHealthBar();
+
+        if (this.pendingUpgrades > 0) {
+            this.showUpgradeChoices();
+            return;
+        }
+
+        this.physics.resume();
+        this.attackTimer.paused = false;
+        this.waveTimer.paused = false;
+        this.spawnTimer.paused = false;
+        this.powerupTimer.paused = false;
+        if (this.chestTimer) this.chestTimer.paused = false;
     }
 
     updateHud() {
@@ -750,6 +1177,13 @@ export default class VampScene extends Phaser.Scene {
         this.hammers.clear(true, true);
         this.loots.clear(true, true);
         this.gems.clear(true, true);
+        this.powerups.clear(true, true);
+        this.chests.clear(true, true);
+        this.extraOrbiters.forEach((orbiter) => orbiter.destroy());
+        this.extraOrbiters = [];
+        this.activePowerupIcons.forEach((slot) => slot.destroy());
+        this.activePowerupIcons = [];
+        this.layoutActivePowerupIcons();
 
         const overlay = this.add.rectangle(GAME_WIDTH / 2, GAME_HEIGHT / 2, GAME_WIDTH, GAME_HEIGHT, 0x000000, 0.68)
             .setScrollFactor(0)
@@ -795,3 +1229,28 @@ export default class VampScene extends Phaser.Scene {
         return `${String(minutes).padStart(2, '0')}:${String(partInSeconds).padStart(2, '0')}`;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

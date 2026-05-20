@@ -36,6 +36,7 @@ class MainScene extends Phaser.Scene {
     this.load.atlas('player', 'assets/player.png', 'assets/player.json');
 	
 	 this.load.image('coin', "assets/coinGold.png");
+	 this.load.image('sword', "assets/sword.png");
 	 
 	 // Load sound
     this.load.audio('coinSound', 'assets/sounds/ventin.mp3');
@@ -166,12 +167,15 @@ this.anims.create({
 		  this.input.on('pointerup', (pointer) => {
 	 // coins.create(player.x, player.y, 'coin').setDepth(2);
 	// coin = coins.create(player.x, player.y, 'coin').setDepth(2);
-     coin =  projectiles.create(player.x, player.y, 'coin');
+     coin =  projectiles.create(player.x, player.y, 'sword');
 	//coins.add(coin)
 	  const angle = Phaser.Math.Angle.Between(player.x, player.y, pointer.worldX, pointer.worldY);
     const speed = 400;  // Speed of the projectile
     const velocityX = Math.cos(angle) * speed;
     const velocityY = Math.sin(angle) * speed;
+    coin.setDisplaySize(32, 32);
+    coin.setDepth(3);
+    coin.rotation = angle + Math.PI / 4;
     coin.setVelocity(velocityX, velocityY); // Throws the coin to the right and upward
     coin.setGravityY(-500); // Optional: to make the coin fall back down due to gravity
 	// Optional: destroy the coin after a certain time or based on a condition
